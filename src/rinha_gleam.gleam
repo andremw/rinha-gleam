@@ -1,33 +1,22 @@
-import gleam/bytes_tree
 import gleam/erlang/process
-import gleam/http/request
-import gleam/http/response
-import logging
+import gleam/json
 import mist
+import wisp
+import wisp/wisp_mist
 
 pub fn main() -> Nil {
-  logging.configure()
-  logging.set_level(logging.Debug)
-
-  logging.log(logging.Info, "Starting server")
-
-  let not_found =
-    response.new(404) |> response.set_body(mist.Bytes(bytes_tree.new()))
+  wisp.configure_logger()
 
   let assert Ok(_) =
-    mist.new(fn(req) {
-      logging.log(logging.Info, "Got request: ")
-
-      case request.path_segments(req) {
-        [] ->
-          response.new(200)
-          |> response.set_body(mist.Bytes(bytes_tree.from_string("Ok")))
-
-        _ -> not_found
-      }
-    })
-    |> mist.bind("localhost")
-    |> mist.with_ipv6
+    wisp_mist.handler(
+      fn(_req) {
+        json.object([#("status", json.string("happy"))])
+        |> json.to_string_tree
+        |> wisp.json_response(200)
+      },
+      "",
+    )
+    |> mist.new
     |> mist.port(9999)
     |> mist.start
 
