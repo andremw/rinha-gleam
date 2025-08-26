@@ -1,4 +1,5 @@
 import gleam/dynamic/decode
+import gleam/http
 import wisp.{type Request}
 import youid/uuid
 
@@ -15,6 +16,7 @@ fn body_decoder() -> decode.Decoder(Body) {
 }
 
 pub fn handle_request(req: Request) {
+  use <- wisp.require_method(req, http.Post)
   use json <- wisp.require_json(req)
 
   case decode.run(json, body_decoder()) {

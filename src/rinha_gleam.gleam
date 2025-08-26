@@ -1,10 +1,10 @@
 import envoy
 import gleam/erlang/process
-import gleam/http
 import gleam/int
 import gleam/json
 import gleam/result
 import mist
+import rinha_gleam/process_payment
 import wisp
 import wisp/wisp_mist
 
@@ -23,11 +23,7 @@ pub fn main() -> Nil {
             |> json.to_string_tree
             |> wisp.json_response(200)
           // matches /payments
-          ["payments"] -> {
-            use <- wisp.require_method(req, http.Post)
-
-            wisp.ok()
-          }
+          ["payments"] -> process_payment.handle_request(req)
           _ -> wisp.not_found()
         }
       },
