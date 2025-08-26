@@ -1,5 +1,6 @@
 import envoy
 import gleam/erlang/process
+import gleam/http
 import gleam/int
 import gleam/json
 import gleam/result
@@ -14,10 +15,21 @@ pub fn main() -> Nil {
 
   let assert Ok(_) =
     wisp_mist.handler(
-      fn(_req) {
-        json.object([#("status", json.string("happy"))])
-        |> json.to_string_tree
-        |> wisp.json_response(200)
+      fn(req) {
+        case wisp.path_segments(req) {
+          // matches /
+          [] ->
+            json.object([#("status", json.string("happyy"))])
+            |> json.to_string_tree
+            |> wisp.json_response(200)
+          // matches /payments
+          ["payments"] -> {
+            use <- wisp.require_method(req, http.Post)
+
+            wisp.ok()
+          }
+          _ -> wisp.not_found()
+        }
       },
       "",
     )
