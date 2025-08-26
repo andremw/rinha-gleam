@@ -1,5 +1,6 @@
 # Build stage
-FROM ghcr.io/gleam-lang/gleam:v1.11.0-erlang-alpine AS builder
+FROM erlang:28.0.2.0-alpine as builder
+COPY --from=ghcr.io/gleam-lang/gleam:v1.11.0-erlang-alpine /bin/gleam /bin/gleam
 
 WORKDIR /app
 
@@ -12,7 +13,7 @@ COPY test/ ./test/
 RUN gleam export erlang-shipment
 
 # Runtime stage
-FROM ghcr.io/gleam-lang/gleam:v1.11.0-erlang-alpine
+FROM erlang:28.0.2.0-alpine
 RUN \
   addgroup --system webapp && \
   adduser --system webapp -g webapp
