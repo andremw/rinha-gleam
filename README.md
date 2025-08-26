@@ -1,20 +1,16 @@
-# rinha_gleam
+# rinha_gleam - Rinha de Backend 2025
 
-[![Package Version](https://img.shields.io/hexpm/v/rinha_gleam)](https://hex.pm/packages/rinha_gleam)
-[![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/rinha_gleam/)
+This project is my attempt to implement the challenge proposed by Rinha de Backend 2025 in a beautiful functional programming language that is Gleam.
 
-```sh
-gleam add rinha_gleam@1
-```
-```gleam
-import rinha_gleam
+Since I'm working on this after the challenge finished, the _focus_ of this implementation will be to apply techniques that make this kind of system more maintainable than we usually see. These techniques are:
 
-pub fn main() -> Nil {
-  // TODO: An example of the project in use
-}
-```
+> [TDD](https://tidyfirst.substack.com/p/canon-tdd)
 
-Further documentation can be found at <https://hexdocs.pm/rinha_gleam>.
+> Functional Programming
+
+> [Vertical Slices Architecture](https://www.youtube.com/watch?v=1PAGtLwOH4Y)
+
+I'll try my best to run the test with a server that is as close to the challenge's server as possible, but beating the other implementations is a non-goal now.
 
 ## Development
 
