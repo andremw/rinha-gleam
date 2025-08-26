@@ -1,11 +1,16 @@
+import envoy
 import gleam/erlang/process
+import gleam/int
 import gleam/json
+import gleam/result
 import mist
 import wisp
 import wisp/wisp_mist
 
 pub fn main() -> Nil {
   wisp.configure_logger()
+
+  let port = envoy.get("PORT") |> result.try(int.parse) |> result.unwrap(9999)
 
   let assert Ok(_) =
     wisp_mist.handler(
@@ -17,7 +22,8 @@ pub fn main() -> Nil {
       "",
     )
     |> mist.new
-    |> mist.port(9999)
+    |> mist.bind("0.0.0.0")
+    |> mist.port(port)
     |> mist.start
 
   process.sleep_forever()
