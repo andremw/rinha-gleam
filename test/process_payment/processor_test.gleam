@@ -10,6 +10,7 @@ import gleeunit
 import glenvy/dotenv
 import glenvy/env
 import rinha_gleam/process_payment/processor.{HttpClient, Payment}
+import rinha_gleam/shared/processor_health.{ProcessorsStatus, Status}
 import youid/uuid
 
 pub fn main() {
@@ -71,6 +72,10 @@ pub fn sends_a_request_to_default_payment_processor_test() {
       http_client:,
       processor_default_uri:,
       processor_fallback_uri:,
+      processor_status: ProcessorsStatus(
+        default: Status(failing: False, min_response_time: 5),
+        fallback: Status(failing: False, min_response_time: 5),
+      ),
     )
 
   processor.process(payment, ctx)
@@ -95,6 +100,10 @@ pub fn sends_a_request_to_fallback_payment_processor_if_request_to_default_proce
       http_client:,
       processor_default_uri:,
       processor_fallback_uri:,
+      processor_status: ProcessorsStatus(
+        default: Status(failing: False, min_response_time: 5),
+        fallback: Status(failing: False, min_response_time: 5),
+      ),
     )
 
   let response = processor.process(payment, ctx)
