@@ -1,7 +1,9 @@
+import birl
 import gleam/dynamic/decode
 import gleam/http
 import gleam/result
 import rinha_gleam/process_payment/context.{type Context}
+import rinha_gleam/process_payment/processor.{Payment}
 import wisp.{type Request}
 import youid/uuid
 
@@ -11,6 +13,7 @@ pub type Body {
 
 pub type ProcessPaymentError {
   InvalidBodyError
+  PaymentError
 }
 
 fn body_decoder() -> decode.Decoder(Body) {
@@ -21,7 +24,7 @@ fn body_decoder() -> decode.Decoder(Body) {
   |> decode.success
 }
 
-pub fn handle_request(req: Request, _ctx: Context) {
+pub fn handle_request(req: Request, ctx: Context) {
   use <- wisp.require_method(req, http.Post)
   use json <- wisp.require_json(req)
 
@@ -36,7 +39,10 @@ pub fn handle_request(req: Request, _ctx: Context) {
       |> result.map_error(fn(_) { InvalidBodyError }),
     )
 
-    Ok(correlation_id)
+    let payment =
+      Payment(amount: body.amount, correlation_id:, requested_at: birl.now())
+
+    processor.process(payment, ctx) |> result.map_error(fn(_) { PaymentError })
   }
 
   case processing_result {
