@@ -18,7 +18,7 @@ pub fn process(payment: Payment, ctx: Context) -> Result(Response(String), Nil) 
     http_client: client,
     processor_default_uri: default_uri,
     processor_fallback_uri: fallback_uri,
-    processor_status:,
+    processors_status:,
   ) = ctx
 
   let body =
@@ -32,7 +32,7 @@ pub fn process(payment: Payment, ctx: Context) -> Result(Response(String), Nil) 
   use default_req <- result.try(prepare_req(default_uri, body))
   use fallback_req <- result.try(prepare_req(fallback_uri, body))
 
-  case processor_status.default.failing {
+  case processors_status.default.failing {
     False ->
       send_with_recovery(client, primary: default_req, secondary: fallback_req)
     True -> {

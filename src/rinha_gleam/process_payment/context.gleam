@@ -12,6 +12,6 @@ pub type Context {
     http_client: HttpClient,
     processor_default_uri: Uri,
     processor_fallback_uri: Uri,
-    processor_status: ProcessorsStatus,
+    processors_status: ProcessorsStatus,
   )
 }

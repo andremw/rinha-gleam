@@ -73,7 +73,7 @@ pub fn sends_a_request_to_default_payment_processor_test() {
       http_client:,
       processor_default_uri:,
       processor_fallback_uri:,
-      processor_status: ProcessorsStatus(
+      processors_status: ProcessorsStatus(
         default: Status(failing: False, min_response_time: 5),
         fallback: Status(failing: False, min_response_time: 5),
       ),
@@ -101,7 +101,7 @@ pub fn sends_a_request_to_fallback_payment_processor_if_request_to_default_proce
       http_client:,
       processor_default_uri:,
       processor_fallback_uri:,
-      processor_status: ProcessorsStatus(
+      processors_status: ProcessorsStatus(
         default: Status(failing: False, min_response_time: 5),
         fallback: Status(failing: False, min_response_time: 5),
       ),
@@ -134,7 +134,7 @@ pub fn sends_a_direct_request_to_fallback_payment_processor_if_default_is_failin
       http_client:,
       processor_default_uri:,
       processor_fallback_uri:,
-      processor_status: ProcessorsStatus(
+      processors_status: ProcessorsStatus(
         default: Status(failing: True, min_response_time: 5),
         fallback: Status(failing: False, min_response_time: 5),
       ),
