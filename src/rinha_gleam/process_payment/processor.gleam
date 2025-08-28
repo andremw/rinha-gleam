@@ -16,11 +16,19 @@ pub type HttpClient {
 }
 
 pub type Context {
-  Context(http_client: HttpClient, processor_default_uri: Uri)
+  Context(
+    http_client: HttpClient,
+    processor_default_uri: Uri,
+    processor_fallback_uri: Uri,
+  )
 }
 
 pub fn process(payment: Payment, ctx: Context) -> Result(Response(String), Nil) {
-  let Context(http_client: client, processor_default_uri: processor_uri) = ctx
+  let Context(
+    http_client: client,
+    processor_default_uri: processor_uri,
+    processor_fallback_uri: fallback_uri,
+  ) = ctx
 
   use request <- result.try(request.from_uri(processor_uri))
 
@@ -36,4 +44,12 @@ pub fn process(payment: Payment, ctx: Context) -> Result(Response(String), Nil) 
   |> request.set_method(http.Post)
   |> request.set_body(body)
   |> client.send
+  |> result.try_recover(fn(_) {
+    use request <- result.try(request.from_uri(fallback_uri))
+
+    request
+    |> request.set_method(http.Post)
+    |> request.set_body(body)
+    |> client.send
+  })
 }

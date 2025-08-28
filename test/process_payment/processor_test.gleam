@@ -19,23 +19,31 @@ pub fn main() {
 fn setup() {
   let _ = dotenv.load()
 
-  use processor_url <- result.try(
+  use default_url <- result.try(
     env.string("PROCESSOR_DEFAULT_URL")
     |> result.map_error(fn(_) { Nil }),
   )
 
-  use uri <- result.try(uri.parse(processor_url))
+  use fallback_url <- result.try(
+    env.string("PROCESSOR_FALLBACK_URL")
+    |> result.map_error(fn(_) { Nil }),
+  )
+
+  use default_uri <- result.try(uri.parse(default_url))
+  use fallback_uri <- result.try(uri.parse(fallback_url))
 
   let amount = 10.5
   let correlation_id = uuid.v7()
   let requested_at = birl.now()
   let payment = Payment(amount:, correlation_id:, requested_at:)
 
-  Ok(#(payment, uri))
+  Ok(#(payment, default_uri, fallback_uri))
 }
 
 pub fn sends_a_request_to_default_payment_processor_test() {
-  use #(payment, uri) <- result.try(setup())
+  use #(payment, processor_default_uri, processor_fallback_uri) <- result.try(
+    setup(),
+  )
 
   let body =
     json.object([
@@ -45,7 +53,7 @@ pub fn sends_a_request_to_default_payment_processor_test() {
     ])
     |> json.to_string
 
-  use expected_request <- result.try(request.from_uri(uri))
+  use expected_request <- result.try(request.from_uri(processor_default_uri))
 
   let expected_request =
     expected_request
@@ -58,13 +66,20 @@ pub fn sends_a_request_to_default_payment_processor_test() {
       response.new(200) |> Ok
     })
 
-  let ctx = processor.Context(http_client:, processor_default_uri: uri)
+  let ctx =
+    processor.Context(
+      http_client:,
+      processor_default_uri:,
+      processor_fallback_uri:,
+    )
 
   processor.process(payment, ctx)
 }
 
 pub fn sends_a_request_to_fallback_payment_processor_if_request_to_default_processor_fails_test() {
-  use #(payment, uri) <- result.try(setup())
+  use #(payment, processor_default_uri, processor_fallback_uri) <- result.try(
+    setup(),
+  )
 
   let http_client =
     HttpClient(send: fn(req) {
@@ -75,7 +90,12 @@ pub fn sends_a_request_to_fallback_payment_processor_if_request_to_default_proce
       }
     })
 
-  let ctx = processor.Context(http_client:, processor_default_uri: uri)
+  let ctx =
+    processor.Context(
+      http_client:,
+      processor_default_uri:,
+      processor_fallback_uri:,
+    )
 
   let response = processor.process(payment, ctx)
 
