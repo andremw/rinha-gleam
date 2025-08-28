@@ -45,13 +45,15 @@ pub fn sends_a_request_to_default_payment_processor_test() {
     |> request.set_method(http.Post)
     |> request.set_body(body)
 
-  let client =
+  let http_client =
     HttpClient(send: fn(req) {
       assert req == expected_request
       response.new(200) |> Ok
     })
 
-  processor.process(payment, client)
+  let ctx = processor.Context(http_client:, processor_default_uri: uri)
+
+  processor.process(payment, ctx)
 }
 // pub fn sends_a_request_to_fallback_payment_processor_if_request_to_default_processor_fails() {
 //   todo

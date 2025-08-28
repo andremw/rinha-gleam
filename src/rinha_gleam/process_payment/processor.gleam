@@ -4,9 +4,7 @@ import gleam/http/request.{type Request}
 import gleam/http/response.{type Response}
 import gleam/json
 import gleam/result
-import gleam/uri
-import glenvy/dotenv
-import glenvy/env
+import gleam/uri.{type Uri}
 import youid/uuid.{type Uuid}
 
 pub type Payment {
@@ -17,18 +15,14 @@ pub type HttpClient {
   HttpClient(send: fn(Request(String)) -> Result(Response(String), Nil))
 }
 
-pub fn process(
-  payment: Payment,
-  client: HttpClient,
-) -> Result(Response(String), Nil) {
-  let _ = dotenv.load()
-  use processor_url <- result.try(
-    env.string("PROCESSOR_DEFAULT_URL")
-    |> result.map_error(fn(_) { Nil }),
-  )
+pub type Context {
+  Context(http_client: HttpClient, processor_default_uri: Uri)
+}
 
-  use uri <- result.try(uri.parse(processor_url))
-  use request <- result.try(request.from_uri(uri))
+pub fn process(payment: Payment, ctx: Context) -> Result(Response(String), Nil) {
+  let Context(http_client: client, processor_default_uri: processor_uri) = ctx
+
+  use request <- result.try(request.from_uri(processor_uri))
 
   let body =
     json.object([
