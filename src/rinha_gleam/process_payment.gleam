@@ -1,10 +1,15 @@
 import gleam/dynamic/decode
 import gleam/http
+import gleam/result
 import wisp.{type Request}
 import youid/uuid
 
 pub type Body {
   Body(amount: Float, correlation_id: String)
+}
+
+pub type ProcessPaymentError {
+  InvalidBodyError
 }
 
 fn body_decoder() -> decode.Decoder(Body) {
@@ -19,13 +24,22 @@ pub fn handle_request(req: Request) {
   use <- wisp.require_method(req, http.Post)
   use json <- wisp.require_json(req)
 
-  case decode.run(json, body_decoder()) {
-    Ok(body) -> {
-      case uuid.from_string(body.correlation_id) {
-        Error(_) -> wisp.response(400)
-        Ok(_) -> wisp.response(200)
-      }
-    }
+  let processing_result = {
+    use body <- result.try(
+      decode.run(json, body_decoder())
+      |> result.map_error(fn(_) { InvalidBodyError }),
+    )
+
+    use correlation_id <- result.try(
+      uuid.from_string(body.correlation_id)
+      |> result.map_error(fn(_) { InvalidBodyError }),
+    )
+
+    Ok(correlation_id)
+  }
+
+  case processing_result {
     Error(_) -> wisp.response(400)
+    Ok(_) -> wisp.response(200)
   }
 }
