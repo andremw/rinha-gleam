@@ -1,6 +1,7 @@
 import gleam/dynamic/decode
 import gleam/http
 import gleam/result
+import rinha_gleam/process_payment/context.{type Context}
 import wisp.{type Request}
 import youid/uuid
 
@@ -20,7 +21,7 @@ fn body_decoder() -> decode.Decoder(Body) {
   |> decode.success
 }
 
-pub fn handle_request(req: Request) {
+pub fn handle_request(req: Request, _ctx: Context) {
   use <- wisp.require_method(req, http.Post)
   use json <- wisp.require_json(req)
 

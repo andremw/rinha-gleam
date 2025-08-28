@@ -5,6 +5,7 @@ import gleam/json
 import gleam/result
 import mist
 import rinha_gleam/process_payment
+import rinha_gleam/process_payment/context.{Context}
 import wisp
 import wisp/wisp_mist
 
@@ -12,6 +13,13 @@ pub fn main() -> Nil {
   wisp.configure_logger()
 
   let port = envoy.get("PORT") |> result.try(int.parse) |> result.unwrap(9999)
+  let ctx =
+    Context(
+      http_client: todo,
+      processor_default_uri: todo,
+      processor_fallback_uri: todo,
+      processors_status: todo,
+    )
 
   let assert Ok(_) =
     wisp_mist.handler(
@@ -23,7 +31,7 @@ pub fn main() -> Nil {
             |> json.to_string_tree
             |> wisp.json_response(200)
           // matches /payments
-          ["payments"] -> process_payment.handle_request(req)
+          ["payments"] -> process_payment.handle_request(req, ctx)
           _ -> wisp.not_found()
         }
       },
