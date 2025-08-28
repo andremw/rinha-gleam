@@ -54,7 +54,7 @@ pub fn process(payment: Payment, ctx: Context) -> Result(Response(String), Nil) 
   }
 }
 
-fn prepare_req(uri: Uri, body: String) {
+fn prepare_req(uri, body) {
   use req <- result.try(request.from_uri(uri))
   req
   |> request.set_method(http.Post)
@@ -62,11 +62,7 @@ fn prepare_req(uri: Uri, body: String) {
   |> Ok
 }
 
-fn send_with_recovery(
-  client: HttpClient,
-  primary req: Request(String),
-  secondary fallback: Request(String),
-) {
+fn send_with_recovery(client: HttpClient, primary req, secondary fallback) {
   req
   |> client.send
   |> result.try_recover(fn(_) {
