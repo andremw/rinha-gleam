@@ -28,12 +28,10 @@ pub type Context {
 pub fn process(payment: Payment, ctx: Context) -> Result(Response(String), Nil) {
   let Context(
     http_client: client,
-    processor_default_uri: processor_uri,
+    processor_default_uri: default_uri,
     processor_fallback_uri: fallback_uri,
     processor_status:,
   ) = ctx
-
-  use request <- result.try(request.from_uri(processor_uri))
 
   let body =
     json.object([
@@ -43,28 +41,35 @@ pub fn process(payment: Payment, ctx: Context) -> Result(Response(String), Nil) 
     ])
     |> json.to_string
 
+  use default_req <- result.try(prepare_req(default_uri, body))
+  use fallback_req <- result.try(prepare_req(fallback_uri, body))
+
   case processor_status.default.failing {
-    False -> {
-      request
-      |> request.set_method(http.Post)
-      |> request.set_body(body)
-      |> client.send
-      |> result.try_recover(fn(_) {
-        use request <- result.try(request.from_uri(fallback_uri))
-
-        request
-        |> request.set_method(http.Post)
-        |> request.set_body(body)
-        |> client.send
-      })
-    }
+    False -> send_with_recovery(client, default_req, fallback_req)
     True -> {
-      use request <- result.try(request.from_uri(fallback_uri))
-
-      request
-      |> request.set_method(http.Post)
-      |> request.set_body(body)
+      fallback_req
       |> client.send
     }
   }
+}
+
+fn prepare_req(uri: Uri, body: String) {
+  use req <- result.try(request.from_uri(uri))
+  req
+  |> request.set_method(http.Post)
+  |> request.set_body(body)
+  |> Ok
+}
+
+fn send_with_recovery(
+  client: HttpClient,
+  req: Request(String),
+  fallback: Request(String),
+) {
+  req
+  |> client.send
+  |> result.try_recover(fn(_) {
+    fallback
+    |> client.send
+  })
 }
