@@ -30,7 +30,7 @@ pub fn process(payment: Payment, ctx: Context) -> Result(Response(String), Nil) 
     http_client: client,
     processor_default_uri: processor_uri,
     processor_fallback_uri: fallback_uri,
-    processor_status: _p,
+    processor_status:,
   ) = ctx
 
   use request <- result.try(request.from_uri(processor_uri))
@@ -43,16 +43,28 @@ pub fn process(payment: Payment, ctx: Context) -> Result(Response(String), Nil) 
     ])
     |> json.to_string
 
-  request
-  |> request.set_method(http.Post)
-  |> request.set_body(body)
-  |> client.send
-  |> result.try_recover(fn(_) {
-    use request <- result.try(request.from_uri(fallback_uri))
+  case processor_status.default.failing {
+    False -> {
+      request
+      |> request.set_method(http.Post)
+      |> request.set_body(body)
+      |> client.send
+      |> result.try_recover(fn(_) {
+        use request <- result.try(request.from_uri(fallback_uri))
 
-    request
-    |> request.set_method(http.Post)
-    |> request.set_body(body)
-    |> client.send
-  })
+        request
+        |> request.set_method(http.Post)
+        |> request.set_body(body)
+        |> client.send
+      })
+    }
+    True -> {
+      use request <- result.try(request.from_uri(fallback_uri))
+
+      request
+      |> request.set_method(http.Post)
+      |> request.set_body(body)
+      |> client.send
+    }
+  }
 }

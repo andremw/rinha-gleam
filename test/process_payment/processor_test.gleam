@@ -112,6 +112,36 @@ pub fn sends_a_request_to_fallback_payment_processor_if_request_to_default_proce
 
   response
 }
-// pub fn sends_a_direct_request_to_fallback_payment_processor_if_default_is_failing_test() {
-//   todo
-// }
+
+pub fn sends_a_direct_request_to_fallback_payment_processor_if_default_is_failing_test() {
+  use #(payment, processor_default_uri, processor_fallback_uri) <- result.try(
+    setup(),
+  )
+
+  let http_client =
+    HttpClient(send: fn(req) {
+      // here we intentionally fail the request to the default processor
+      case req.host |> string.contains("default") {
+        True -> Ok(response.new(200))
+        // fallback responds with 202 just so we can differentiate
+        False -> Ok(response.new(202))
+      }
+    })
+
+  let ctx =
+    processor.Context(
+      http_client:,
+      processor_default_uri:,
+      processor_fallback_uri:,
+      processor_status: ProcessorsStatus(
+        default: Status(failing: True, min_response_time: 5),
+        fallback: Status(failing: False, min_response_time: 5),
+      ),
+    )
+
+  let response = processor.process(payment, ctx)
+
+  assert response == Ok(response.new(202))
+
+  response
+}
