@@ -45,7 +45,8 @@ pub fn process(payment: Payment, ctx: Context) -> Result(Response(String), Nil) 
   use fallback_req <- result.try(prepare_req(fallback_uri, body))
 
   case processor_status.default.failing {
-    False -> send_with_recovery(client, default_req, fallback_req)
+    False ->
+      send_with_recovery(client, primary: default_req, secondary: fallback_req)
     True -> {
       fallback_req
       |> client.send
@@ -63,8 +64,8 @@ fn prepare_req(uri: Uri, body: String) {
 
 fn send_with_recovery(
   client: HttpClient,
-  req: Request(String),
-  fallback: Request(String),
+  primary req: Request(String),
+  secondary fallback: Request(String),
 ) {
   req
   |> client.send
