@@ -9,7 +9,8 @@ import gleam/uri
 import gleeunit
 import glenvy/dotenv
 import glenvy/env
-import rinha_gleam/process_payment/processor.{HttpClient, Payment}
+import rinha_gleam/process_payment/context.{Context, HttpClient}
+import rinha_gleam/process_payment/processor.{Payment}
 import rinha_gleam/shared/processor_health.{ProcessorsStatus, Status}
 import youid/uuid
 
@@ -62,13 +63,13 @@ pub fn sends_a_request_to_default_payment_processor_test() {
     |> request.set_body(body)
 
   let http_client =
-    HttpClient(send: fn(req) {
+    context.HttpClient(send: fn(req) {
       assert req == expected_request
       response.new(200) |> Ok
     })
 
   let ctx =
-    processor.Context(
+    Context(
       http_client:,
       processor_default_uri:,
       processor_fallback_uri:,
@@ -96,7 +97,7 @@ pub fn sends_a_request_to_fallback_payment_processor_if_request_to_default_proce
     })
 
   let ctx =
-    processor.Context(
+    Context(
       http_client:,
       processor_default_uri:,
       processor_fallback_uri:,
@@ -129,7 +130,7 @@ pub fn sends_a_direct_request_to_fallback_payment_processor_if_default_is_failin
     })
 
   let ctx =
-    processor.Context(
+    Context(
       http_client:,
       processor_default_uri:,
       processor_fallback_uri:,

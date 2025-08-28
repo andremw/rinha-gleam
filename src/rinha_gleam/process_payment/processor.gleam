@@ -1,28 +1,16 @@
 import birl.{type Time}
 import gleam/http
-import gleam/http/request.{type Request}
+import gleam/http/request
 import gleam/http/response.{type Response}
 import gleam/json
 import gleam/result
-import gleam/uri.{type Uri}
-import rinha_gleam/shared/processor_health.{type ProcessorsStatus}
+import rinha_gleam/process_payment/context.{
+  type Context, type HttpClient, Context,
+}
 import youid/uuid.{type Uuid}
 
 pub type Payment {
   Payment(amount: Float, correlation_id: Uuid, requested_at: Time)
-}
-
-pub type HttpClient {
-  HttpClient(send: fn(Request(String)) -> Result(Response(String), Nil))
-}
-
-pub type Context {
-  Context(
-    http_client: HttpClient,
-    processor_default_uri: Uri,
-    processor_fallback_uri: Uri,
-    processor_status: ProcessorsStatus,
-  )
 }
 
 pub fn process(payment: Payment, ctx: Context) -> Result(Response(String), Nil) {
