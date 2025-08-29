@@ -21,31 +21,21 @@ pub fn main() {
 fn setup() {
   let _ = dotenv.load()
 
-  use default_url <- result.try(
-    env.string("PROCESSOR_DEFAULT_URL")
-    |> result.map_error(fn(_) { Nil }),
-  )
-
-  use fallback_url <- result.try(
-    env.string("PROCESSOR_FALLBACK_URL")
-    |> result.map_error(fn(_) { Nil }),
-  )
-
-  use default_uri <- result.try(uri.parse(default_url))
-  use fallback_uri <- result.try(uri.parse(fallback_url))
+  let assert Ok(default_url) = env.string("PROCESSOR_DEFAULT_URL")
+  let assert Ok(fallback_url) = env.string("PROCESSOR_FALLBACK_URL")
+  let assert Ok(default_uri) = uri.parse(default_url)
+  let assert Ok(fallback_uri) = uri.parse(fallback_url)
 
   let amount = 10.5
   let correlation_id = uuid.v7()
   let requested_at = birl.now()
   let payment = Payment(amount:, correlation_id:, requested_at:)
 
-  Ok(#(payment, default_uri, fallback_uri))
+  #(payment, default_uri, fallback_uri)
 }
 
 pub fn sends_a_request_to_default_payment_processor_test() {
-  use #(payment, processor_default_uri, processor_fallback_uri) <- result.try(
-    setup(),
-  )
+  let #(payment, processor_default_uri, processor_fallback_uri) = setup()
 
   let body =
     json.object([
@@ -55,7 +45,7 @@ pub fn sends_a_request_to_default_payment_processor_test() {
     ])
     |> json.to_string
 
-  use expected_request <- result.try(request.from_uri(processor_default_uri))
+  let assert Ok(expected_request) = request.from_uri(processor_default_uri)
 
   let expected_request =
     expected_request
@@ -79,13 +69,11 @@ pub fn sends_a_request_to_default_payment_processor_test() {
       ),
     )
 
-  processor.process(payment, ctx)
+  let _ = processor.process(payment, ctx)
 }
 
 pub fn sends_a_request_to_fallback_payment_processor_if_request_to_default_processor_fails_test() {
-  use #(payment, processor_default_uri, processor_fallback_uri) <- result.try(
-    setup(),
-  )
+  let #(payment, processor_default_uri, processor_fallback_uri) = setup()
 
   let http_client =
     HttpClient(send: fn(req) {
@@ -110,14 +98,10 @@ pub fn sends_a_request_to_fallback_payment_processor_if_request_to_default_proce
   let response = processor.process(payment, ctx)
 
   assert response == Ok(response.new(200))
-
-  response
 }
 
 pub fn sends_a_direct_request_to_fallback_payment_processor_if_default_is_failing_test() {
-  use #(payment, processor_default_uri, processor_fallback_uri) <- result.try(
-    setup(),
-  )
+  let #(payment, processor_default_uri, processor_fallback_uri) = setup()
 
   let http_client =
     HttpClient(send: fn(req) {
@@ -143,6 +127,4 @@ pub fn sends_a_direct_request_to_fallback_payment_processor_if_default_is_failin
   let response = processor.process(payment, ctx)
 
   assert response == Ok(response.new(202))
-
-  response
 }
