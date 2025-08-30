@@ -1,6 +1,5 @@
 import gleam/http/response
 import gleam/json
-import gleam/result
 import gleam/uri
 import gleeunit
 import glenvy/dotenv
