@@ -70,3 +70,7 @@ pub fn handler_requires_correlation_id_uuid_test() {
 
   assert response.status == 400
 }
+
+pub fn stores_payment_info_when_successful_test() {
+  todo
+}
