@@ -9,7 +9,8 @@ import gleeunit
 import glenvy/dotenv
 import glenvy/env
 import rinha_gleam/process_payment/context.{Context, HttpClient}
-import rinha_gleam/process_payment/processor.{Payment}
+import rinha_gleam/process_payment/processor
+import rinha_gleam/process_payment/processor/types.{Payment}
 import rinha_gleam/shared/processor_health.{ProcessorsStatus, Status}
 import youid/uuid
 

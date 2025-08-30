@@ -4,7 +4,8 @@ import gleam/http
 import gleam/result
 import gleam/string_tree
 import rinha_gleam/process_payment/context.{type Context}
-import rinha_gleam/process_payment/processor.{Payment}
+import rinha_gleam/process_payment/processor
+import rinha_gleam/process_payment/processor/types.{Payment}
 import wisp.{type Request}
 import youid/uuid
 

@@ -1,4 +1,4 @@
-import birl.{type Time}
+import birl
 import gleam/http
 import gleam/http/request
 import gleam/http/response.{type Response}
@@ -7,11 +7,8 @@ import gleam/result
 import rinha_gleam/process_payment/context.{
   type Context, type HttpClient, Context,
 }
-import youid/uuid.{type Uuid}
-
-pub type Payment {
-  Payment(amount: Float, correlation_id: Uuid, requested_at: Time)
-}
+import rinha_gleam/process_payment/processor/types.{type Payment}
+import youid/uuid
 
 pub fn process(payment: Payment, ctx: Context) -> Result(Response(String), Nil) {
   let Context(
