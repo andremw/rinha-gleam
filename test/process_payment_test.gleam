@@ -40,9 +40,7 @@ pub fn handler_returns_a_simple_response_test() {
     ])
 
   let request = testing.post_json("http://localhost:9999/payments", [], body)
-
   let ctx = setup()
-
   let response = process_payment.handle_request(request, ctx)
 
   assert response.status == 200
@@ -70,7 +68,31 @@ pub fn handler_requires_correlation_id_uuid_test() {
 
   assert response.status == 400
 }
+// pub fn stores_payment_summary_when_successful_test() {
+//   // here we start the actor that keeps track of the payment summary
+//   let _ = payments_summary.start()
 
-pub fn stores_payment_info_when_successful_test() {
-  todo
-}
+//   assert payments_summary.get_summary()
+//     == PaymentsSummary(
+//       default: Totals(totalRequests: 0, totalAmount: 0),
+//       fallback: Totals(totalRequests: 0, totalAmount: 0),
+//     )
+
+//   let uuid = uuid.v4() |> uuid.to_string
+//   let body =
+//     json.object([
+//       #("amount", json.float(19.9)),
+//       #("correlationId", json.string(uuid)),
+//     ])
+//   let request = testing.post_json("http://localhost:9999/payments", [], body)
+//   let ctx = setup()
+
+//   // we don't care about the response here
+//   let _ = process_payment.handle_request(request, ctx)
+
+//   assert payments_summary.get_summary()
+//     == PaymentsSummary(
+//       default: Totals(totalRequests: 1, totalAmount: 19.9),
+//       fallback: Totals(totalRequests: 0, totalAmount: 0),
+//     )
+// }
