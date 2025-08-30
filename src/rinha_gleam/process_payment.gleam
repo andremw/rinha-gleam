@@ -2,6 +2,7 @@ import birl
 import gleam/dynamic/decode
 import gleam/http
 import gleam/result
+import gleam/string_tree
 import rinha_gleam/process_payment/context.{type Context}
 import rinha_gleam/process_payment/processor.{Payment}
 import wisp.{type Request}
@@ -46,7 +47,19 @@ pub fn handle_request(req: Request, ctx: Context) {
   }
 
   case processing_result {
-    Error(_) -> wisp.response(400)
+    Error(InvalidBodyError) ->
+      wisp.bad_request()
+      |> wisp.set_body(
+        wisp.Text(string_tree.append(string_tree.new(), "Invalid body!")),
+      )
+    Error(PaymentError) ->
+      wisp.internal_server_error()
+      |> wisp.set_body(
+        wisp.Text(string_tree.append(
+          string_tree.new(),
+          "Failed to process payment",
+        )),
+      )
     Ok(_) -> wisp.response(200)
   }
 }
