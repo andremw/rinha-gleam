@@ -60,6 +60,9 @@ pub fn handle_request(req: Request, ctx: Context) {
           "Failed to process payment",
         )),
       )
-    Ok(_) -> wisp.response(200)
+    Ok(_) -> {
+      wisp.log_info("Payment successful")
+      wisp.response(200)
+    }
   }
 }

@@ -3,7 +3,6 @@ import gleam/http
 import gleam/http/request
 import gleam/http/response
 import gleam/json
-import gleam/result
 import gleam/string
 import gleam/uri
 import gleeunit
