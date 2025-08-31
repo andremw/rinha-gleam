@@ -2,7 +2,9 @@ import booklet.{type Booklet}
 import gleam/erlang/process.{type Subject}
 import gleam/float
 import gleam/otp/actor
-import rinha_gleam/process_payment/processor/types.{type Payment}
+import rinha_gleam/process_payment/processor/types.{
+  type Payment, type PaymentProcessor,
+}
 
 // client types (used by the processes that interact this actor)
 
@@ -34,8 +36,12 @@ pub fn start() {
   process.named_subject(name)
 }
 
-pub fn register_new_payment(subject, payment) {
-  process.call_forever(subject, NewPayment(_, payment))
+pub fn register_new_payment(
+  subject,
+  payment,
+  processor processor: PaymentProcessor,
+) {
+  process.call_forever(subject, NewPayment(_, payment, processor))
 }
 
 pub fn read(subject) {
@@ -45,7 +51,11 @@ pub fn read(subject) {
 /// actor (runs in a separate process)
 pub type Message {
   Shutdown
-  NewPayment(reply_to: Subject(Nil), payment: Payment)
+  NewPayment(
+    reply_to: Subject(Nil),
+    payment: Payment,
+    processor: PaymentProcessor,
+  )
   Get(reply_to: Subject(PaymentsSummary))
 }
 
@@ -55,21 +65,33 @@ fn handle_message(summary_booklet: Booklet(PaymentsSummary), message: Message) {
       process.send(reply_to, booklet.get(summary_booklet))
       actor.continue(summary_booklet)
     }
-    NewPayment(reply_to:, payment:) -> {
+    NewPayment(reply_to:, payment:, processor:) -> {
       booklet.update(summary_booklet, fn(summary) {
-        PaymentsSummary(
-          default: Totals(
-            total_requests: summary.default.total_requests + 1,
-            total_amount: p2(summary.default.total_amount +. payment.amount),
-          ),
-          fallback: Totals(total_requests: 0, total_amount: 0.0),
-        )
+        case processor {
+          types.Default ->
+            PaymentsSummary(
+              ..summary,
+              default: update_totals(summary.default, payment.amount),
+            )
+          types.Fallback ->
+            PaymentsSummary(
+              ..summary,
+              fallback: update_totals(summary.fallback, payment.amount),
+            )
+        }
       })
       process.send(reply_to, Nil)
       actor.continue(summary_booklet)
     }
     Shutdown -> actor.stop()
   }
+}
+
+fn update_totals(totals: Totals, amount_to_add) {
+  Totals(
+    total_requests: totals.total_requests + 1,
+    total_amount: p2(totals.total_amount +. amount_to_add),
+  )
 }
 
 fn p2(n) {
