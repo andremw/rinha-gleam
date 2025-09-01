@@ -6,6 +6,9 @@ import glenvy/dotenv
 import glenvy/env
 import rinha_gleam/process_payment
 import rinha_gleam/process_payment/context.{Context, HttpClient}
+import rinha_gleam/process_payment/processor/payments_summary.{
+  PaymentsSummary, Totals,
+}
 import rinha_gleam/shared/processor_health.{ProcessorsStatus, Status}
 import wisp/testing
 import youid/uuid
@@ -21,6 +24,7 @@ fn setup() {
   let assert Ok(fallback_url) = env.string("PROCESSOR_FALLBACK_URL")
   let assert Ok(default_uri) = uri.parse(default_url)
   let assert Ok(fallback_uri) = uri.parse(fallback_url)
+  let summary_subject = payments_summary.start()
 
   let status = Status(failing: False, min_response_time: 5)
   Context(
@@ -28,6 +32,7 @@ fn setup() {
     processor_default_uri: default_uri,
     processor_fallback_uri: fallback_uri,
     processors_status: ProcessorsStatus(default: status, fallback: status),
+    summary_subject:,
   )
 }
 
@@ -68,31 +73,30 @@ pub fn handler_requires_correlation_id_uuid_test() {
 
   assert response.status == 400
 }
-// pub fn stores_payment_summary_when_successful_test() {
-//   // here we start the actor that keeps track of the payment summary
-//   let _ = payments_summary.start()
 
-//   assert payments_summary.get_summary()
-//     == PaymentsSummary(
-//       default: Totals(totalRequests: 0, totalAmount: 0),
-//       fallback: Totals(totalRequests: 0, totalAmount: 0),
-//     )
+pub fn stores_payment_summary_when_successful_test() {
+  let ctx = setup()
 
-//   let uuid = uuid.v4() |> uuid.to_string
-//   let body =
-//     json.object([
-//       #("amount", json.float(19.9)),
-//       #("correlationId", json.string(uuid)),
-//     ])
-//   let request = testing.post_json("http://localhost:9999/payments", [], body)
-//   let ctx = setup()
+  assert payments_summary.read(ctx.summary_subject)
+    == PaymentsSummary(
+      default: Totals(total_requests: 0, total_amount: 0.0),
+      fallback: Totals(total_requests: 0, total_amount: 0.0),
+    )
 
-//   // we don't care about the response here
-//   let _ = process_payment.handle_request(request, ctx)
+  let uuid = uuid.v4() |> uuid.to_string
+  let body =
+    json.object([
+      #("amount", json.float(19.9)),
+      #("correlationId", json.string(uuid)),
+    ])
+  let request = testing.post_json("http://localhost:9999/payments", [], body)
 
-//   assert payments_summary.get_summary()
-//     == PaymentsSummary(
-//       default: Totals(totalRequests: 1, totalAmount: 19.9),
-//       fallback: Totals(totalRequests: 0, totalAmount: 0),
-//     )
-// }
+  // we don't care about the response here
+  let _ = process_payment.handle_request(request, ctx)
+
+  assert payments_summary.read(ctx.summary_subject)
+    == PaymentsSummary(
+      default: Totals(total_requests: 1, total_amount: 19.9),
+      fallback: Totals(total_requests: 0, total_amount: 0.0),
+    )
+}

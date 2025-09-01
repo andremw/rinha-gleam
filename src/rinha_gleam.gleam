@@ -8,6 +8,7 @@ import gleam/uri
 import mist
 import rinha_gleam/process_payment
 import rinha_gleam/process_payment/context.{Context, HttpClient}
+import rinha_gleam/process_payment/processor/payments_summary
 import rinha_gleam/shared/processor_health.{ProcessorsStatus, Status}
 import wisp
 import wisp/wisp_mist
@@ -37,6 +38,8 @@ pub fn main() -> Nil {
           hackney.send(req) |> result.map_error(fn(_) { Nil })
         })
 
+      let summary_subject = payments_summary.start()
+
       let assert Ok(_) =
         wisp_mist.handler(
           fn(req) {
@@ -60,6 +63,7 @@ pub fn main() -> Nil {
                     processors_status:,
                     processor_default_uri: default_uri,
                     processor_fallback_uri: fallback_uri,
+                    summary_subject:,
                   )
                 process_payment.handle_request(req, ctx)
               }

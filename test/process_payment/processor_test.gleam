@@ -1,4 +1,5 @@
 import birl
+import gleam/erlang/process
 import gleam/http
 import gleam/http/request
 import gleam/http/response
@@ -58,6 +59,8 @@ pub fn sends_a_request_to_default_payment_processor_test() {
       response.new(200) |> Ok
     })
 
+  let summary_subject = process.new_subject()
+
   let ctx =
     Context(
       http_client:,
@@ -67,6 +70,7 @@ pub fn sends_a_request_to_default_payment_processor_test() {
         default: Status(failing: False, min_response_time: 5),
         fallback: Status(failing: False, min_response_time: 5),
       ),
+      summary_subject:,
     )
 
   let response = processor.process(payment, ctx)
@@ -86,6 +90,8 @@ pub fn sends_a_request_to_fallback_payment_processor_if_request_to_default_proce
       }
     })
 
+  let summary_subject = process.new_subject()
+
   let ctx =
     Context(
       http_client:,
@@ -95,6 +101,7 @@ pub fn sends_a_request_to_fallback_payment_processor_if_request_to_default_proce
         default: Status(failing: False, min_response_time: 5),
         fallback: Status(failing: False, min_response_time: 5),
       ),
+      summary_subject:,
     )
 
   let response = processor.process(payment, ctx)
@@ -107,6 +114,8 @@ pub fn sends_a_direct_request_to_fallback_payment_processor_if_default_is_failin
 
   let http_client = HttpClient(send: fn(_req) { Ok(response.new(200)) })
 
+  let summary_subject = process.new_subject()
+
   let ctx =
     Context(
       http_client:,
@@ -116,6 +125,7 @@ pub fn sends_a_direct_request_to_fallback_payment_processor_if_default_is_failin
         default: Status(failing: True, min_response_time: 5),
         fallback: Status(failing: False, min_response_time: 5),
       ),
+      summary_subject:,
     )
 
   let response = processor.process(payment, ctx)

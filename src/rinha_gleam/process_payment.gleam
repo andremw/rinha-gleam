@@ -1,10 +1,14 @@
 import birl
 import gleam/dynamic/decode
 import gleam/http
+import gleam/http/response.{Response}
 import gleam/result
 import gleam/string_tree
 import rinha_gleam/process_payment/context.{type Context}
 import rinha_gleam/process_payment/processor
+import rinha_gleam/process_payment/processor/payments_summary.{
+  register_new_payment,
+}
 import rinha_gleam/process_payment/processor/types.{Payment}
 import wisp.{type Request}
 import youid/uuid
@@ -26,7 +30,7 @@ fn body_decoder() -> decode.Decoder(Body) {
   |> decode.success
 }
 
-pub fn handle_request(req: Request, ctx: Context) {
+pub fn handle_request(req: Request, ctx: Context(payments_summary.Message)) {
   use <- wisp.require_method(req, http.Post)
   use json <- wisp.require_json(req)
 
@@ -44,7 +48,9 @@ pub fn handle_request(req: Request, ctx: Context) {
     let payment =
       Payment(amount: body.amount, correlation_id:, requested_at: birl.now())
 
-    processor.process(payment, ctx) |> result.map_error(fn(_) { PaymentError })
+    processor.process(payment, ctx)
+    |> result.map_error(fn(_) { PaymentError })
+    |> result.map(fn(process_result) { #(process_result, payment) })
   }
 
   case processing_result {
@@ -61,7 +67,8 @@ pub fn handle_request(req: Request, ctx: Context) {
           "Failed to process payment",
         )),
       )
-    Ok(_) -> {
+    Ok(#(Response(body: processor, ..), payment)) -> {
+      register_new_payment(ctx.summary_subject, payment, processor:)
       wisp.log_info("Payment successful")
       wisp.response(200)
     }

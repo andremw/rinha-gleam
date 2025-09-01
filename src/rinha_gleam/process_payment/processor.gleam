@@ -12,15 +12,20 @@ import rinha_gleam/process_payment/processor/types.{
 }
 import youid/uuid
 
+/// Sends the payment request to one of the processors. By default, it tries to send a request to the default payment
+/// processor, unless it already knows that the default one is failing. In that case, or if the initial request to
+/// the default one fails, it sends the request to the fallback processor.
+/// Returns the PaymentProcessor that successfully handled the request.
 pub fn process(
   payment: Payment,
-  ctx: Context,
+  ctx: Context(a),
 ) -> Result(Response(PaymentProcessor), Nil) {
   let Context(
     http_client: client,
     processor_default_uri: default_uri,
     processor_fallback_uri: fallback_uri,
     processors_status:,
+    ..,
   ) = ctx
 
   let body =
@@ -40,7 +45,7 @@ pub fn process(
     True -> {
       fallback_req
       |> client.send
-      |> result.map(respond_with_processor(_, Fallback))
+      |> result.map(response.map(_, fn(_) { Fallback }))
     }
   }
 }
@@ -54,16 +59,10 @@ fn prepare_req(uri, body) {
 fn send_with_recovery(client: HttpClient, primary req, secondary fallback) {
   req
   |> client.send
-  |> result.map(respond_with_processor(_, Default))
+  |> result.map(response.map(_, fn(_) { Default }))
   |> result.try_recover(fn(_) {
     fallback
     |> client.send
-    |> result.map(respond_with_processor(_, Fallback))
+    |> result.map(response.map(_, fn(_) { Fallback }))
   })
-}
-
-/// Converts a response to Response(PaymentProcessor)
-fn respond_with_processor(response, processor: PaymentProcessor) {
-  use _ <- response.map(response)
-  processor
 }
