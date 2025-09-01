@@ -10,7 +10,7 @@ import glenvy/dotenv
 import glenvy/env
 import rinha_gleam/process_payment/context.{Context, HttpClient}
 import rinha_gleam/process_payment/processor
-import rinha_gleam/process_payment/processor/types.{Payment}
+import rinha_gleam/process_payment/processor/types.{Default, Fallback, Payment}
 import rinha_gleam/shared/processor_health.{ProcessorsStatus, Status}
 import youid/uuid
 
@@ -69,7 +69,9 @@ pub fn sends_a_request_to_default_payment_processor_test() {
       ),
     )
 
-  let _ = processor.process(payment, ctx)
+  let response = processor.process(payment, ctx)
+
+  assert response == Ok(response.new(200) |> response.set_body(Default))
 }
 
 pub fn sends_a_request_to_fallback_payment_processor_if_request_to_default_processor_fails_test() {
@@ -97,21 +99,13 @@ pub fn sends_a_request_to_fallback_payment_processor_if_request_to_default_proce
 
   let response = processor.process(payment, ctx)
 
-  assert response == Ok(response.new(200))
+  assert response == Ok(response.new(200) |> response.set_body(Fallback))
 }
 
 pub fn sends_a_direct_request_to_fallback_payment_processor_if_default_is_failing_test() {
   let #(payment, processor_default_uri, processor_fallback_uri) = setup()
 
-  let http_client =
-    HttpClient(send: fn(req) {
-      // here we intentionally fail the request to the default processor
-      case req.host |> string.contains("default") {
-        True -> Ok(response.new(200))
-        // fallback responds with 202 just so we can differentiate
-        False -> Ok(response.new(202))
-      }
-    })
+  let http_client = HttpClient(send: fn(_req) { Ok(response.new(200)) })
 
   let ctx =
     Context(
@@ -126,5 +120,5 @@ pub fn sends_a_direct_request_to_fallback_payment_processor_if_default_is_failin
 
   let response = processor.process(payment, ctx)
 
-  assert response == Ok(response.new(202))
+  assert response == Ok(response.new(200) |> response.set_body(Fallback))
 }

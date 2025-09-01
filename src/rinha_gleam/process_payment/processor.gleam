@@ -7,10 +7,15 @@ import gleam/result
 import rinha_gleam/process_payment/context.{
   type Context, type HttpClient, Context,
 }
-import rinha_gleam/process_payment/processor/types.{type Payment}
+import rinha_gleam/process_payment/processor/types.{
+  type Payment, type PaymentProcessor, Default, Fallback,
+}
 import youid/uuid
 
-pub fn process(payment: Payment, ctx: Context) -> Result(Response(String), Nil) {
+pub fn process(
+  payment: Payment,
+  ctx: Context,
+) -> Result(Response(PaymentProcessor), Nil) {
   let Context(
     http_client: client,
     processor_default_uri: default_uri,
@@ -35,6 +40,7 @@ pub fn process(payment: Payment, ctx: Context) -> Result(Response(String), Nil) 
     True -> {
       fallback_req
       |> client.send
+      |> result.map(respond_with_processor(_, Fallback))
     }
   }
 }
@@ -48,8 +54,16 @@ fn prepare_req(uri, body) {
 fn send_with_recovery(client: HttpClient, primary req, secondary fallback) {
   req
   |> client.send
+  |> result.map(respond_with_processor(_, Default))
   |> result.try_recover(fn(_) {
     fallback
     |> client.send
+    |> result.map(respond_with_processor(_, Fallback))
   })
+}
+
+/// Converts a response to Response(PaymentProcessor)
+fn respond_with_processor(response, processor: PaymentProcessor) {
+  use _ <- response.map(response)
+  processor
 }
