@@ -6,6 +6,7 @@ import gleam/json
 import gleam/result
 import gleam/uri
 import mist
+import rinha_gleam/get_payment_summary
 import rinha_gleam/process_payment
 import rinha_gleam/process_payment/context.{Context, HttpClient}
 import rinha_gleam/process_payment/processor/payments_summary
@@ -38,6 +39,13 @@ pub fn main() -> Nil {
           hackney.send(req) |> result.map_error(fn(_) { Nil })
         })
 
+      // TODO: unify this
+      let get_payment_summary_client =
+        get_payment_summary.HttpClient(send: fn(req) {
+          wisp.log_info("Sending request to " <> req.host)
+          hackney.send(req) |> result.map_error(fn(_) { Nil })
+        })
+
       let summary_subject = payments_summary.start()
 
       let assert Ok(_) =
@@ -66,6 +74,14 @@ pub fn main() -> Nil {
                     summary_subject:,
                   )
                 process_payment.handle_request(req, ctx)
+              }
+              ["payments-summary"] -> {
+                let ctx =
+                  get_payment_summary.Context(
+                    http_client: get_payment_summary_client,
+                    summary_subject:,
+                  )
+                get_payment_summary.handle_request(req, ctx)
               }
               _ -> wisp.not_found()
             }

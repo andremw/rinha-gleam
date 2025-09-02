@@ -1,6 +1,7 @@
 import booklet.{type Booklet}
 import gleam/erlang/process.{type Subject}
 import gleam/float
+import gleam/json.{type Json}
 import gleam/otp/actor
 import rinha_gleam/process_payment/processor/types.{
   type Payment, type PaymentProcessor,
@@ -14,6 +15,20 @@ pub type Totals {
 
 pub type PaymentsSummary {
   PaymentsSummary(default: Totals, fallback: Totals)
+}
+
+fn encode_totals(totals: Totals) {
+  json.object([
+    #("total_requests", json.int(totals.total_requests)),
+    #("total_amount", json.float(totals.total_amount)),
+  ])
+}
+
+pub fn encode(summary: PaymentsSummary) -> Json {
+  json.object([
+    #("default", encode_totals(summary.default)),
+    #("fallback", encode_totals(summary.fallback)),
+  ])
 }
 
 /// we'll spawn a named actor and later send messages to it using the name rather than the pid or subject.
