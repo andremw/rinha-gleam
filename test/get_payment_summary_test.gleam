@@ -58,8 +58,8 @@ pub fn returns_the_accumulated_payment_summmary_test() {
   let assert Ok(summary) = {
     let decoder = {
       let total_decoder = {
-        use total_requests <- decode.field("total_requests", decode.int)
-        use total_amount <- decode.field("total_amount", decode.float)
+        use total_requests <- decode.field("totalRequests", decode.int)
+        use total_amount <- decode.field("totalAmount", decode.float)
         decode.success(Totals(total_amount:, total_requests:))
       }
 

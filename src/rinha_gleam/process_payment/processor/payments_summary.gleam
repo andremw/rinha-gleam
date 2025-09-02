@@ -19,8 +19,8 @@ pub type PaymentsSummary {
 
 fn encode_totals(totals: Totals) {
   json.object([
-    #("total_requests", json.int(totals.total_requests)),
-    #("total_amount", json.float(totals.total_amount)),
+    #("totalRequests", json.int(totals.total_requests)),
+    #("totalAmount", json.float(totals.total_amount)),
   ])
 }
 
