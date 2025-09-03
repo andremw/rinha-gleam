@@ -3,7 +3,7 @@ import gleam/http
 import gleam/http/request.{type Request}
 import gleam/http/response.{type Response}
 import gleam/json
-import rinha_gleam/process_payment/processor/payments_summary
+import rinha_gleam/shared/payments_summary
 import wisp
 
 pub type HttpClient {

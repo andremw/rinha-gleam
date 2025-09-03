@@ -5,12 +5,10 @@ import gleam/list
 import gleam/pair
 import gleeunit
 import qcheck.{type Generator}
-import rinha_gleam/process_payment/processor/payments_summary.{
-  PaymentsSummary, Totals,
-}
 import rinha_gleam/process_payment/processor/types.{
   type Payment, type PaymentProcessor, Default, Fallback, Payment,
 }
+import rinha_gleam/shared/payments_summary.{PaymentsSummary, Totals}
 import youid/uuid
 
 pub fn main() -> Nil {

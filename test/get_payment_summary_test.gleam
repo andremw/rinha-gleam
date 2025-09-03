@@ -6,10 +6,8 @@ import gleam/json
 import gleeunit
 import glenvy/dotenv
 import rinha_gleam/get_payment_summary.{Context, HttpClient}
-import rinha_gleam/process_payment/processor/payments_summary.{
-  PaymentsSummary, Totals,
-}
 import rinha_gleam/process_payment/processor/types.{Default, Fallback, Payment}
+import rinha_gleam/shared/payments_summary.{PaymentsSummary, Totals}
 import wisp/testing
 import youid/uuid
 
