@@ -10,7 +10,7 @@ import rinha_gleam/get_payment_summary
 import rinha_gleam/process_payment
 import rinha_gleam/process_payment/context.{Context, HttpClient}
 import rinha_gleam/shared/payments_summary
-import rinha_gleam/shared/processor_health.{Health, ProcessorsHealth}
+import rinha_gleam/shared/processors_health.{Health, ProcessorsHealth}
 import wisp
 import wisp/wisp_mist
 

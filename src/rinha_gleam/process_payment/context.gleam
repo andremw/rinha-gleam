@@ -2,7 +2,7 @@ import gleam/erlang/process.{type Subject}
 import gleam/http/request.{type Request}
 import gleam/http/response.{type Response}
 import gleam/uri.{type Uri}
-import rinha_gleam/shared/processor_health.{type ProcessorsHealth}
+import rinha_gleam/shared/processors_health.{type ProcessorsHealth}
 
 pub type HttpClient {
   HttpClient(send: fn(Request(String)) -> Result(Response(String), Nil))
