@@ -24,7 +24,7 @@ pub fn process(
     http_client: client,
     processor_default_uri: default_uri,
     processor_fallback_uri: fallback_uri,
-    processors_status:,
+    processors_health:,
     ..,
   ) = ctx
 
@@ -39,7 +39,7 @@ pub fn process(
   use default_req <- result.try(prepare_req(default_uri, body))
   use fallback_req <- result.try(prepare_req(fallback_uri, body))
 
-  case processors_status.default.failing {
+  case processors_health.default.failing {
     False ->
       send_with_recovery(client, primary: default_req, secondary: fallback_req)
     True -> {

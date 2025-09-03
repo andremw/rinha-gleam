@@ -10,7 +10,7 @@ import rinha_gleam/get_payment_summary
 import rinha_gleam/process_payment
 import rinha_gleam/process_payment/context.{Context, HttpClient}
 import rinha_gleam/process_payment/processor/payments_summary
-import rinha_gleam/shared/processor_health.{ProcessorsStatus, Status}
+import rinha_gleam/shared/processor_health.{Health, ProcessorsHealth}
 import wisp
 import wisp/wisp_mist
 
@@ -59,16 +59,16 @@ pub fn main() -> Nil {
                 |> wisp.json_response(200)
               // matches /payments
               ["payments"] -> {
-                let processors_status =
-                  ProcessorsStatus(
-                    default: Status(failing: False, min_response_time: 5),
-                    fallback: Status(failing: False, min_response_time: 5),
+                let processors_health =
+                  ProcessorsHealth(
+                    default: Health(failing: False, min_response_time: 5),
+                    fallback: Health(failing: False, min_response_time: 5),
                   )
 
                 let ctx =
                   Context(
                     http_client:,
-                    processors_status:,
+                    processors_health:,
                     processor_default_uri: default_uri,
                     processor_fallback_uri: fallback_uri,
                     summary_subject:,

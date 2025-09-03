@@ -12,7 +12,7 @@ import glenvy/env
 import rinha_gleam/process_payment/context.{Context, HttpClient}
 import rinha_gleam/process_payment/processor
 import rinha_gleam/process_payment/processor/types.{Default, Fallback, Payment}
-import rinha_gleam/shared/processor_health.{ProcessorsStatus, Status}
+import rinha_gleam/shared/processor_health.{Health, ProcessorsHealth}
 import youid/uuid
 
 pub fn main() {
@@ -66,9 +66,9 @@ pub fn sends_a_request_to_default_payment_processor_test() {
       http_client:,
       processor_default_uri:,
       processor_fallback_uri:,
-      processors_status: ProcessorsStatus(
-        default: Status(failing: False, min_response_time: 5),
-        fallback: Status(failing: False, min_response_time: 5),
+      processors_health: ProcessorsHealth(
+        default: Health(failing: False, min_response_time: 5),
+        fallback: Health(failing: False, min_response_time: 5),
       ),
       summary_subject:,
     )
@@ -97,9 +97,9 @@ pub fn sends_a_request_to_fallback_payment_processor_if_request_to_default_proce
       http_client:,
       processor_default_uri:,
       processor_fallback_uri:,
-      processors_status: ProcessorsStatus(
-        default: Status(failing: False, min_response_time: 5),
-        fallback: Status(failing: False, min_response_time: 5),
+      processors_health: ProcessorsHealth(
+        default: Health(failing: False, min_response_time: 5),
+        fallback: Health(failing: False, min_response_time: 5),
       ),
       summary_subject:,
     )
@@ -121,9 +121,9 @@ pub fn sends_a_direct_request_to_fallback_payment_processor_if_default_is_failin
       http_client:,
       processor_default_uri:,
       processor_fallback_uri:,
-      processors_status: ProcessorsStatus(
-        default: Status(failing: True, min_response_time: 5),
-        fallback: Status(failing: False, min_response_time: 5),
+      processors_health: ProcessorsHealth(
+        default: Health(failing: True, min_response_time: 5),
+        fallback: Health(failing: False, min_response_time: 5),
       ),
       summary_subject:,
     )

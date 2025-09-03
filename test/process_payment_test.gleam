@@ -9,7 +9,7 @@ import rinha_gleam/process_payment/context.{Context, HttpClient}
 import rinha_gleam/process_payment/processor/payments_summary.{
   PaymentsSummary, Totals,
 }
-import rinha_gleam/shared/processor_health.{ProcessorsStatus, Status}
+import rinha_gleam/shared/processor_health.{Health, ProcessorsHealth}
 import wisp/testing
 import youid/uuid
 
@@ -26,12 +26,12 @@ fn setup() {
   let assert Ok(fallback_uri) = uri.parse(fallback_url)
   let summary_subject = payments_summary.start()
 
-  let status = Status(failing: False, min_response_time: 5)
+  let status = Health(failing: False, min_response_time: 5)
   Context(
     http_client: HttpClient(send: fn(_req) { Ok(response.new(200)) }),
     processor_default_uri: default_uri,
     processor_fallback_uri: fallback_uri,
-    processors_status: ProcessorsStatus(default: status, fallback: status),
+    processors_health: ProcessorsHealth(default: status, fallback: status),
     summary_subject:,
   )
 }
