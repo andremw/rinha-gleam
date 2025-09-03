@@ -6,8 +6,9 @@ import gleam/pair
 import gleeunit
 import qcheck.{type Generator}
 import rinha_gleam/process_payment/processor/types.{
-  type Payment, type PaymentProcessor, Default, Fallback, Payment,
+  type PaymentProcessor, Default, Fallback,
 }
+import rinha_gleam/shared/payment.{type Payment, Payment}
 import rinha_gleam/shared/payments_summary.{PaymentsSummary, Totals}
 import youid/uuid
 

@@ -11,7 +11,8 @@ import glenvy/dotenv
 import glenvy/env
 import rinha_gleam/process_payment/context.{Context, HttpClient}
 import rinha_gleam/process_payment/processor
-import rinha_gleam/process_payment/processor/types.{Default, Fallback, Payment}
+import rinha_gleam/process_payment/processor/types.{Default, Fallback}
+import rinha_gleam/shared/payment.{Payment}
 import rinha_gleam/shared/processor_health.{Health, ProcessorsHealth}
 import youid/uuid
 

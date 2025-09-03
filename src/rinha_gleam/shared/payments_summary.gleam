@@ -3,9 +3,8 @@ import gleam/erlang/process.{type Subject}
 import gleam/float
 import gleam/json.{type Json}
 import gleam/otp/actor
-import rinha_gleam/process_payment/processor/types.{
-  type Payment, type PaymentProcessor,
-}
+import rinha_gleam/process_payment/processor/types.{type PaymentProcessor}
+import rinha_gleam/shared/payment.{type Payment}
 
 // client types (used by the processes that interact this actor)
 

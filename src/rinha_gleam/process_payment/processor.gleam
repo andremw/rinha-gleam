@@ -8,8 +8,9 @@ import rinha_gleam/process_payment/context.{
   type Context, type HttpClient, Context,
 }
 import rinha_gleam/process_payment/processor/types.{
-  type Payment, type PaymentProcessor, Default, Fallback,
+  type PaymentProcessor, Default, Fallback,
 }
+import rinha_gleam/shared/payment.{type Payment}
 import youid/uuid
 
 /// Sends the payment request to one of the processors. By default, it tries to send a request to the default payment
