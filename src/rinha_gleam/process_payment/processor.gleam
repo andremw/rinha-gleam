@@ -38,7 +38,9 @@ pub fn process(
     |> json.to_string
 
   use default_req <- result.try(prepare_req(default_uri, body))
+  let default_req = default_req |> request.set_path("/payments")
   use fallback_req <- result.try(prepare_req(fallback_uri, body))
+  let fallback_req = fallback_req |> request.set_path("/payments")
 
   case processors_health.default.failing {
     False ->
