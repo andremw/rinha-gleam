@@ -10,7 +10,7 @@ import rinha_gleam/get_payment_summary
 import rinha_gleam/process_payment
 import rinha_gleam/process_payment/context.{Context, HttpClient}
 import rinha_gleam/shared/payments_summary
-import rinha_gleam/shared/processors_health.{Health, ProcessorsHealth}
+import rinha_gleam/shared/processors_health
 import wisp
 import wisp/wisp_mist
 
@@ -35,18 +35,28 @@ pub fn main() -> Nil {
 
       let http_client =
         HttpClient(send: fn(req) {
-          wisp.log_info("Sending request to " <> req.host)
+          // wisp.log_info("Sending request to " <> req.host)
           hackney.send(req) |> result.map_error(fn(_) { Nil })
         })
 
       // TODO: unify this
       let get_payment_summary_client =
         get_payment_summary.HttpClient(send: fn(req) {
-          wisp.log_info("Sending request to " <> req.host)
+          // wisp.log_info("Sending request to " <> req.host)
           hackney.send(req) |> result.map_error(fn(_) { Nil })
         })
 
       let summary_subject = payments_summary.start()
+      let healthcheck_subject =
+        processors_health.start_monitor(processors_health.MonitorArgs(
+          check_interval_ms: 5000,
+          http_client: processors_health.HttpClient(send: fn(req) {
+            // wisp.log_info("Requesting service health to" <> req.host)
+            hackney.send(req) |> result.map_error(fn(_) { Nil })
+          }),
+          processor_default_uri: default_uri,
+          processor_fallback_uri: fallback_uri,
+        ))
 
       let assert Ok(_) =
         wisp_mist.handler(
@@ -60,10 +70,9 @@ pub fn main() -> Nil {
               // matches /payments
               ["payments"] -> {
                 let processors_health =
-                  ProcessorsHealth(
-                    default: Health(failing: False, min_response_time: 5),
-                    fallback: Health(failing: False, min_response_time: 5),
-                  )
+                  processors_health.read(healthcheck_subject)
+
+                // wisp.log_info("Health " <> string.inspect(processors_health))
 
                 let ctx =
                   Context(
