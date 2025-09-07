@@ -48,6 +48,7 @@ pub fn sends_a_request_to_default_payment_processor_test() {
     |> json.to_string
 
   let assert Ok(expected_request) = request.from_uri(processor_default_uri)
+  let expected_request = expected_request |> request.set_path("/payments")
 
   let expected_request =
     expected_request
