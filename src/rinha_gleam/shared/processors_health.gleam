@@ -85,6 +85,7 @@ fn handle_message(state: ProcessorsHealth, message: Message) {
       // echo "running check"
       process.spawn_unlinked(fn() {
         use req <- result.try(request.from_uri(args.processor_default_uri))
+        let req = req |> request.set_path("/payments/service-health")
         use res <- result.try(args.http_client.send(req))
 
         // echo "about to send check request to default"
@@ -110,6 +111,7 @@ fn handle_message(state: ProcessorsHealth, message: Message) {
 
       process.spawn_unlinked(fn() {
         use req <- result.try(request.from_uri(args.processor_fallback_uri))
+        let req = req |> request.set_path("/payments/service-health")
         use res <- result.try(args.http_client.send(req))
 
         // echo "about to send check request to fallback"
