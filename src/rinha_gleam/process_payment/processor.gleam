@@ -42,7 +42,12 @@ pub fn process(
   use fallback_req <- result.try(prepare_req(fallback_uri, body))
   let fallback_req = fallback_req |> request.set_path("/payments")
 
-  case processors_health.default.failing {
+  let default_failing = processors_health.default.failing
+  let default_slow =
+    processors_health.default.min_response_time
+    > processors_health.fallback.min_response_time
+
+  case default_failing || default_slow {
     False ->
       send_with_recovery(client, primary: default_req, secondary: fallback_req)
     True -> {
