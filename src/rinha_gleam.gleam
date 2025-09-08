@@ -1,9 +1,12 @@
 import envoy
+import gleam/erlang/atom
+import gleam/erlang/node
 import gleam/erlang/process
 import gleam/hackney
 import gleam/int
 import gleam/json
 import gleam/result
+import gleam/string
 import gleam/uri
 import mist
 import rinha_gleam/get_payment_summary
@@ -26,6 +29,12 @@ fn get_processor_uris() {
 
 pub fn main() -> Nil {
   wisp.configure_logger()
+
+  let assert Ok(peer) = envoy.get("PEER_NAME")
+
+  echo "node.self: " <> string.inspect(node.self())
+  echo "visible: " <> string.inspect(node.visible())
+  echo "connect? " <> string.inspect(node.connect(atom.create(peer)))
 
   case get_processor_uris() {
     Error(_) -> Nil
