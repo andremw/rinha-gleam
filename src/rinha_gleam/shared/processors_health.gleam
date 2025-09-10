@@ -166,7 +166,7 @@ fn handle_message(state: ProcessorsHealth, message: Message) {
     Shutdown -> actor.continue(state)
 
     Read(client_process) -> {
-      echo "READING " <> string.inspect(state)
+      // echo "READING " <> string.inspect(state)
       actor.send(client_process, state)
       actor.continue(state)
     }
