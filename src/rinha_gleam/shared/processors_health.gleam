@@ -1,11 +1,14 @@
 import gleam/dynamic/decode
+import gleam/erlang/atom
 import gleam/erlang/process.{type Subject}
 import gleam/http/request.{type Request}
 import gleam/http/response.{type Response}
 import gleam/json
 import gleam/otp/actor
 import gleam/result
+import gleam/string
 import gleam/uri.{type Uri}
+import glyn/registry
 
 pub type ResponseTimeMs =
   Int
@@ -18,7 +21,7 @@ pub type ProcessorsHealth {
   ProcessorsHealth(default: Health, fallback: Health)
 }
 
-const actor_name = "ProcessorsHealth"
+pub const actor_name = "ProcessorsHealth"
 
 pub type HttpClient {
   HttpClient(send: fn(Request(String)) -> Result(Response(String), Nil))
@@ -34,28 +37,52 @@ pub type MonitorArgs {
 }
 
 pub fn start_monitor(args: MonitorArgs) {
+  // we create the registry that we'll register if it hasn't been registered by another instance yet.
+  let registry =
+    registry.new("healthcheck", message_decoder(args.http_client), Shutdown)
+
   let initial_state =
     ProcessorsHealth(
       default: Health(failing: False, min_response_time: 10),
       fallback: Health(failing: False, min_response_time: 10),
     )
 
-  let name = process.new_name(actor_name)
-  let _ =
-    actor.new(initial_state)
+  case
+    actor.new_with_initialiser(200, fn(subject) {
+      case registry.register(registry, actor_name, Nil) {
+        // if registration fails, it means another instance already registered, so we just return the initialized actor
+        Error(_) -> {
+          actor.initialised(initial_state)
+          |> actor.returning(subject)
+          |> Ok
+        }
+        Ok(selector) -> {
+          let selector =
+            process.new_selector()
+            |> process.select(subject)
+            |> process.merge_selector(selector)
+
+          actor.initialised(initial_state)
+          |> actor.selecting(selector)
+          |> actor.returning(subject)
+          |> Ok
+        }
+      }
+    })
     |> actor.on_message(handle_message)
-    |> actor.named(name)
     |> actor.start()
+  {
+    Error(_) -> registry
+    Ok(started) -> {
+      process.send(started.data, Check(started.data, args))
 
-  let monitor_process = process.named_subject(name)
-
-  process.send(monitor_process, Check(monitor_process, args))
-
-  monitor_process
+      registry
+    }
+  }
 }
 
-pub fn read(subject) {
-  process.call_forever(subject, Read)
+pub fn read(healthcheck_registry) {
+  registry.call(healthcheck_registry, actor_name, 100, Read)
 }
 
 // actor (runs on different process)
@@ -72,17 +99,80 @@ pub type Message {
   Check(self: Subject(Message), monitor_args: MonitorArgs)
 }
 
+fn message_decoder(http_client) -> decode.Decoder(Message) {
+  decode.one_of(decode.map(atom_decoder("shutdown"), fn(_) { Shutdown }), [
+    read_decoder(),
+    update_decoder(),
+    check_decoder(http_client),
+  ])
+}
+
+fn read_decoder() {
+  use _ <- decode.field(0, atom_decoder("read"))
+  use client_process <- decode.field(1, decode.dynamic)
+  decode.success(Read(client_process: unsafe_cast_subject(client_process)))
+}
+
+fn update_decoder() {
+  use _ <- decode.field(0, atom_decoder("update"))
+  use failing <- decode.field(1, decode.bool)
+  use min_response_time <- decode.field(2, decode.int)
+  use processor <- decode.field(3, processor_decoder())
+  decode.success(Update(failing:, min_response_time:, processor:))
+}
+
+fn processor_decoder() {
+  decode.one_of(decode.map(atom_decoder("default"), fn(_) { Default }), [
+    decode.map(atom_decoder("fallback"), fn(_) { Fallback }),
+  ])
+}
+
+fn check_decoder(http_client) {
+  use _ <- decode.field(0, atom_decoder("check"))
+  use self <- decode.field(1, decode.dynamic)
+  use processor_default_url <- decode.field(2, decode.string)
+  use processor_fallback_url <- decode.field(3, decode.string)
+  use check_interval_ms <- decode.field(4, decode.int)
+
+  case uri.parse(processor_default_url), uri.parse(processor_fallback_url) {
+    Ok(processor_default_uri), Ok(processor_fallback_uri) ->
+      decode.success(Check(
+        self: unsafe_cast_subject(self),
+        monitor_args: MonitorArgs(
+          check_interval_ms:,
+          processor_default_uri:,
+          processor_fallback_uri:,
+          http_client:,
+        ),
+      ))
+    _, _ -> todo
+  }
+}
+
+fn atom_decoder(expected) {
+  use value <- decode.then(atom.decoder())
+  case atom.to_string(value) == expected {
+    True -> decode.success(value)
+    False -> decode.failure(value, "Expected atom: " <> expected)
+  }
+}
+
+// Unsafe cast for Subject decoding - use with caution
+@external(erlang, "gleam_stdlib", "identity")
+fn unsafe_cast_subject(value: decode.Dynamic) -> Subject(a)
+
 fn handle_message(state: ProcessorsHealth, message: Message) {
   case message {
     Shutdown -> actor.continue(state)
 
     Read(client_process) -> {
+      echo "READING " <> string.inspect(state)
       actor.send(client_process, state)
       actor.continue(state)
     }
     Check(self, args) -> {
+      // echo "CHECKING? "
       // here we want to check both processors in parallel and then update them
-      // echo "running check"
       process.spawn_unlinked(fn() {
         use req <- result.try(request.from_uri(args.processor_default_uri))
         let req = req |> request.set_path("/payments/service-health")
@@ -139,7 +229,7 @@ fn handle_message(state: ProcessorsHealth, message: Message) {
       actor.continue(state)
     }
     Update(failing:, min_response_time:, processor:) -> {
-      // echo "Update running for " <> string.inspect(processor)
+      // echo "UPDATING? "
       case processor {
         Default ->
           ProcessorsHealth(

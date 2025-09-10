@@ -44,11 +44,12 @@ pub fn keeps_track_of_processors_health_test() {
     ))
 
   // echo "before initial_check"
-  let initial_check = processors_health.read(monitor)
+  let assert Ok(initial_check) = processors_health.read(monitor)
   // echo "after initial check"
   process.sleep(20)
   // echo "before second check"
-  let second_check = processors_health.read(monitor)
+
+  let assert Ok(second_check) = processors_health.read(monitor)
   // echo "after second check"
 
   assert [initial_check, second_check]
@@ -62,9 +63,6 @@ pub fn keeps_track_of_processors_health_test() {
         fallback: Health(failing: False, min_response_time: 10),
       ),
     ]
-
-  monitor
-  |> process.send(processors_health.Shutdown)
 }
 
 fn encode_health(health: Health) {

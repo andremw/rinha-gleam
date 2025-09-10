@@ -24,21 +24,21 @@ fn get_processor_uris() {
   use default_uri <- result.try(uri.parse(default_url))
   use fallback_uri <- result.try(uri.parse(fallback_url))
 
-  Ok(#(default_uri, fallback_uri))
+  use peer_name <- result.try(envoy.get("PEER_NAME"))
+
+  Ok(#(default_uri, fallback_uri, peer_name))
 }
 
 pub fn main() -> Nil {
   wisp.configure_logger()
 
-  let assert Ok(peer) = envoy.get("PEER_NAME")
-
-  echo "node.self: " <> string.inspect(node.self())
-  echo "visible: " <> string.inspect(node.visible())
-  echo "connect? " <> string.inspect(node.connect(atom.create(peer)))
-
   case get_processor_uris() {
     Error(_) -> Nil
-    Ok(#(default_uri, fallback_uri)) -> {
+    Ok(#(default_uri, fallback_uri, peer_name)) -> {
+      echo "node.self: " <> string.inspect(node.self())
+      echo "visible: " <> string.inspect(node.visible())
+      echo "connect? " <> string.inspect(node.connect(atom.create(peer_name)))
+
       let port =
         envoy.get("PORT") |> result.try(int.parse) |> result.unwrap(9999)
 
@@ -78,7 +78,7 @@ pub fn main() -> Nil {
                 |> wisp.json_response(200)
               // matches /payments
               ["payments"] -> {
-                let processors_health =
+                let assert Ok(processors_health) =
                   processors_health.read(healthcheck_subject)
 
                 // wisp.log_info("Health " <> string.inspect(processors_health))
