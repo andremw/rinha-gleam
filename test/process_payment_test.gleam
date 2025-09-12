@@ -15,14 +15,13 @@ pub fn main() -> Nil {
   gleeunit.main()
 }
 
-fn setup() {
+fn setup(summary_subject) {
   let _ = dotenv.load()
 
   let assert Ok(default_url) = env.string("PROCESSOR_DEFAULT_URL")
   let assert Ok(fallback_url) = env.string("PROCESSOR_FALLBACK_URL")
   let assert Ok(default_uri) = uri.parse(default_url)
   let assert Ok(fallback_uri) = uri.parse(fallback_url)
-  let summary_subject = payments_summary.start()
 
   let status = Health(failing: False, min_response_time: 5)
   Context(
@@ -35,6 +34,7 @@ fn setup() {
 }
 
 pub fn handler_returns_a_simple_response_test() {
+  let summary_subject = payments_summary.start()
   let uuid = uuid.v4() |> uuid.to_string
   let body =
     json.object([
@@ -43,43 +43,55 @@ pub fn handler_returns_a_simple_response_test() {
     ])
 
   let request = testing.post_json("http://localhost:9999/payments", [], body)
-  let ctx = setup()
+  let ctx = setup(summary_subject)
   let response = process_payment.handle_request(request, ctx)
+
+  // cleanup
+  let _ = payments_summary.stop(summary_subject)
 
   assert response.status == 200
 }
 
 pub fn handler_requires_amount_test() {
+  let summary_subject = payments_summary.start()
   let body = json.object([#("correlationId", json.string(""))])
 
   let request = testing.post_json("http://localhost:9999/payments", [], body)
-  let ctx = setup()
+  let ctx = setup(summary_subject)
   let response = process_payment.handle_request(request, ctx)
+
+  // cleanup
+  let _ = payments_summary.stop(summary_subject)
 
   assert response.status == 400
 }
 
 pub fn handler_requires_correlation_id_uuid_test() {
+  let summary_subject = payments_summary.start()
   let body =
     json.object([
       #("amount", json.float(19.9)),
       #("correlationId", json.string("")),
     ])
   let request = testing.post_json("http://localhost:9999/payments", [], body)
-  let ctx = setup()
+  let ctx = setup(summary_subject)
   let response = process_payment.handle_request(request, ctx)
+
+  // cleanup
+  let _ = payments_summary.stop(summary_subject)
 
   assert response.status == 400
 }
 
 pub fn stores_payment_summary_when_successful_test() {
-  let ctx = setup()
+  let summary_subject = payments_summary.start()
+  let ctx = setup(summary_subject)
 
   assert payments_summary.read(ctx.summary_subject)
-    == PaymentsSummary(
+    == Ok(PaymentsSummary(
       default: Totals(total_requests: 0, total_amount: 0.0),
       fallback: Totals(total_requests: 0, total_amount: 0.0),
-    )
+    ))
 
   let uuid = uuid.v4() |> uuid.to_string
   let body =
@@ -93,8 +105,11 @@ pub fn stores_payment_summary_when_successful_test() {
   let _ = process_payment.handle_request(request, ctx)
 
   assert payments_summary.read(ctx.summary_subject)
-    == PaymentsSummary(
+    == Ok(PaymentsSummary(
       default: Totals(total_requests: 1, total_amount: 19.9),
       fallback: Totals(total_requests: 0, total_amount: 0.0),
-    )
+    ))
+
+  // cleanup
+  let _ = payments_summary.stop(summary_subject)
 }

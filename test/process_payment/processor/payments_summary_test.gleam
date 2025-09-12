@@ -47,7 +47,10 @@ pub fn stores_concurrent_payment_information_test() {
   payments_tuples
   |> list.each(fn(_) { process.receive_forever(completion_subject) })
 
-  let payments_summary = payments_summary.read(summary_subject)
+  let assert Ok(payments_summary) = payments_summary.read(summary_subject)
+
+  // cleanup
+  let _ = payments_summary.stop(summary_subject)
 
   let #(payments_using_default, payments_using_fallback) =
     payments_tuples

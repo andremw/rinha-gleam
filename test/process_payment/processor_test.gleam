@@ -13,6 +13,7 @@ import rinha_gleam/process_payment/context.{Context, HttpClient}
 import rinha_gleam/process_payment/processor
 import rinha_gleam/process_payment/processor/types.{Default, Fallback}
 import rinha_gleam/shared/payment.{Payment}
+import rinha_gleam/shared/payments_summary
 import rinha_gleam/shared/processors_health.{Health, ProcessorsHealth}
 import youid/uuid
 
@@ -61,7 +62,7 @@ pub fn sends_a_request_to_default_payment_processor_test() {
       response.new(200) |> Ok
     })
 
-  let summary_subject = process.new_subject()
+  let summary_subject = payments_summary.start()
 
   let ctx =
     Context(
@@ -92,7 +93,7 @@ pub fn sends_a_request_to_fallback_payment_processor_if_request_to_default_proce
       }
     })
 
-  let summary_subject = process.new_subject()
+  let summary_subject = payments_summary.start()
 
   let ctx =
     Context(
@@ -116,7 +117,7 @@ pub fn sends_a_direct_request_to_fallback_payment_processor_if_default_is_failin
 
   let http_client = HttpClient(send: fn(_req) { Ok(response.new(200)) })
 
-  let summary_subject = process.new_subject()
+  let summary_subject = payments_summary.start()
 
   let ctx =
     Context(
@@ -140,7 +141,7 @@ pub fn sends_a_direct_request_to_fallback_payment_processor_if_default_is_slower
 
   let http_client = HttpClient(send: fn(_req) { Ok(response.new(200)) })
 
-  let summary_subject = process.new_subject()
+  let summary_subject = payments_summary.start()
 
   let ctx =
     Context(

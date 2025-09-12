@@ -66,8 +66,8 @@ pub fn handle_request(req: Request, ctx: Context(payments_summary.Message)) {
         )),
       )
     Ok(#(Response(body: processor, ..), payment)) -> {
-      register_new_payment(ctx.summary_subject, payment, processor:)
-      wisp.log_info("Payment successful")
+      let _ = register_new_payment(ctx.summary_subject, payment, processor:)
+      // wisp.log_info("Payment successful")
       wisp.response(200)
     }
   }

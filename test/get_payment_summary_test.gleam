@@ -24,20 +24,20 @@ pub fn returns_the_accumulated_payment_summmary_test() {
 
   // here we're not really interested in using the proper way to register a payment (through a request),
   // so it's no big deal to just register payments directly
-  let _ =
+  let assert Ok(_) =
     payments_summary.register_new_payment(
       summary_subject,
       Payment(amount: 19.9, correlation_id:, requested_at:),
       Default,
     )
 
-  let _ =
+  let assert Ok(_) =
     payments_summary.register_new_payment(
       summary_subject,
       Payment(amount: 15.0, correlation_id:, requested_at:),
       Fallback,
     )
-  let _ =
+  let assert Ok(_) =
     payments_summary.register_new_payment(
       summary_subject,
       Payment(amount: 10.0, correlation_id:, requested_at:),
@@ -76,6 +76,9 @@ pub fn returns_the_accumulated_payment_summmary_test() {
 
     json.parse(string_body, decoder)
   }
+
+  // cleanup
+  let _ = payments_summary.stop(summary_subject)
 
   assert summary
     == PaymentsSummary(

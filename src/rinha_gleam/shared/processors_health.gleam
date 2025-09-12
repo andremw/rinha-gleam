@@ -6,7 +6,6 @@ import gleam/http/response.{type Response}
 import gleam/json
 import gleam/otp/actor
 import gleam/result
-import gleam/string
 import gleam/uri.{type Uri}
 import glyn/registry
 
@@ -21,7 +20,7 @@ pub type ProcessorsHealth {
   ProcessorsHealth(default: Health, fallback: Health)
 }
 
-pub const actor_name = "ProcessorsHealth"
+const actor_name = "ProcessorsHealth"
 
 pub type HttpClient {
   HttpClient(send: fn(Request(String)) -> Result(Response(String), Nil))
