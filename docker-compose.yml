@@ -25,13 +25,10 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: rinha-api1
-    # hostname: rinha-api1
     environment:
       - PORT=9999
       - PROCESSOR_DEFAULT_URL=http://payment-processor-default:8080
       - PROCESSOR_FALLBACK_URL=http://payment-processor-fallback:8080
-      - ERL_FLAGS=-sname api@api1 -setcookie rinha_cluster_cookie
-      - PEER_NAME=api@api2
     networks:
       - rinha-network
       - payment-processor
@@ -49,13 +46,10 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: rinha-api2
-    # hostname: rinha-api2
     environment:
       - PORT=9999
       - PROCESSOR_DEFAULT_URL=http://payment-processor-default:8080
       - PROCESSOR_FALLBACK_URL=http://payment-processor-fallback:8080
-      - ERL_FLAGS=-sname api@api2 -setcookie rinha_cluster_cookie
-      - PEER_NAME=api@api1
     networks:
       - rinha-network
       - payment-processor

@@ -1,12 +1,9 @@
 import envoy
-import gleam/erlang/atom
-import gleam/erlang/node
 import gleam/erlang/process
 import gleam/hackney
 import gleam/int
 import gleam/json
 import gleam/result
-import gleam/string
 import gleam/uri
 import mist
 import rinha_gleam/get_payment_summary
@@ -24,9 +21,7 @@ fn get_processor_uris() {
   use default_uri <- result.try(uri.parse(default_url))
   use fallback_uri <- result.try(uri.parse(fallback_url))
 
-  use peer_name <- result.try(envoy.get("PEER_NAME"))
-
-  Ok(#(default_uri, fallback_uri, peer_name))
+  Ok(#(default_uri, fallback_uri))
 }
 
 pub fn main() -> Nil {
@@ -34,11 +29,7 @@ pub fn main() -> Nil {
 
   case get_processor_uris() {
     Error(_) -> Nil
-    Ok(#(default_uri, fallback_uri, peer_name)) -> {
-      echo "node.self: " <> string.inspect(node.self())
-      echo "visible: " <> string.inspect(node.visible())
-      echo "connect? " <> string.inspect(node.connect(atom.create(peer_name)))
-
+    Ok(#(default_uri, fallback_uri)) -> {
       let port =
         envoy.get("PORT") |> result.try(int.parse) |> result.unwrap(9999)
 
@@ -78,7 +69,7 @@ pub fn main() -> Nil {
                 |> wisp.json_response(200)
               // matches /payments
               ["payments"] -> {
-                let assert Ok(processors_health) =
+                let processors_health =
                   processors_health.read(healthcheck_subject)
 
                 // wisp.log_info("Health " <> string.inspect(processors_health))
