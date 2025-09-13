@@ -52,12 +52,13 @@ pub fn handle_request(req: Request, ctx: Context(payments_summary.Message)) {
   }
 
   case processing_result {
-    Error(InvalidBodyError) ->
+    Error(InvalidBodyError) -> {
       wisp.bad_request()
       |> wisp.set_body(
         wisp.Text(string_tree.append(string_tree.new(), "Invalid body!")),
       )
-    Error(PaymentError) ->
+    }
+    Error(PaymentError) -> {
       wisp.internal_server_error()
       |> wisp.set_body(
         wisp.Text(string_tree.append(
@@ -65,10 +66,13 @@ pub fn handle_request(req: Request, ctx: Context(payments_summary.Message)) {
           "Failed to process payment",
         )),
       )
-    Ok(#(Response(body: processor, ..), payment)) -> {
+    }
+    Ok(#(Response(body: processor, status: 200, ..), payment)) -> {
       register_new_payment(ctx.summary_subject, payment, processor:)
-      wisp.log_info("Payment successful")
-      wisp.response(200)
+      wisp.ok()
+    }
+    _ -> {
+      wisp.bad_request()
     }
   }
 }

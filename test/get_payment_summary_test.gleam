@@ -1,8 +1,10 @@
 import birl
+import birl/duration
 import gleam/dynamic
 import gleam/dynamic/decode
 import gleam/http/response
 import gleam/json
+import gleam/uri
 import gleeunit
 import glenvy/dotenv
 import rinha_gleam/get_payment_summary.{Context, HttpClient}
@@ -44,7 +46,15 @@ pub fn returns_the_accumulated_payment_summmary_test() {
       Fallback,
     )
 
-  let request = testing.get("http://localhost:9999/payments-summary", [])
+  let from =
+    birl.subtract(requested_at, duration.hours(1))
+    |> birl.to_iso8601()
+
+  let to =
+    birl.add(requested_at, duration.hours(2))
+    |> birl.to_iso8601()
+  let qs = uri.query_to_string([#("from", from), #("to", to)])
+  let request = testing.get("http://localhost:9999/payments-summary?" <> qs, [])
 
   let ctx =
     Context(

@@ -1,5 +1,8 @@
+import birl
+import birl/duration
 import gleam/http/response
 import gleam/json
+import gleam/option.{Some}
 import gleam/uri
 import gleeunit
 import glenvy/dotenv
@@ -75,7 +78,10 @@ pub fn handler_requires_correlation_id_uuid_test() {
 pub fn stores_payment_summary_when_successful_test() {
   let ctx = setup()
 
-  assert payments_summary.read(ctx.summary_subject)
+  let from = Some(birl.now())
+  let to = from |> option.map(birl.add(_, duration.hours(2)))
+
+  assert payments_summary.read(ctx.summary_subject, from:, to:)
     == PaymentsSummary(
       default: Totals(total_requests: 0, total_amount: 0.0),
       fallback: Totals(total_requests: 0, total_amount: 0.0),
@@ -92,7 +98,7 @@ pub fn stores_payment_summary_when_successful_test() {
   // we don't care about the response here
   let _ = process_payment.handle_request(request, ctx)
 
-  assert payments_summary.read(ctx.summary_subject)
+  assert payments_summary.read(ctx.summary_subject, from:, to:)
     == PaymentsSummary(
       default: Totals(total_requests: 1, total_amount: 19.9),
       fallback: Totals(total_requests: 0, total_amount: 0.0),

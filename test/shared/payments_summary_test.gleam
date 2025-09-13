@@ -1,7 +1,9 @@
 import birl
+import birl/duration
 import gleam/erlang/process
 import gleam/float
 import gleam/list
+import gleam/option.{Some}
 import gleam/pair
 import gleeunit
 import qcheck.{type Generator}
@@ -18,6 +20,8 @@ pub fn main() -> Nil {
 
 pub fn stores_concurrent_payment_information_test() {
   let requested_at = birl.now()
+  let from = Some(birl.subtract(requested_at, duration.hours(1)))
+  let to = from |> option.map(birl.add(_, duration.hours(2)))
   let correlation_id = uuid.v7()
 
   use payments_tuples <- qcheck.given(payments(requested_at, correlation_id))
@@ -47,7 +51,7 @@ pub fn stores_concurrent_payment_information_test() {
   payments_tuples
   |> list.each(fn(_) { process.receive_forever(completion_subject) })
 
-  let payments_summary = payments_summary.read(summary_subject)
+  let payments_summary = payments_summary.read(summary_subject, from:, to:)
 
   let #(payments_using_default, payments_using_fallback) =
     payments_tuples
