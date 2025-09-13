@@ -38,9 +38,7 @@ pub fn process(
     |> json.to_string
 
   use default_req <- result.try(prepare_req(default_uri, body))
-  let default_req = default_req |> request.set_path("/payments")
   use fallback_req <- result.try(prepare_req(fallback_uri, body))
-  let fallback_req = fallback_req |> request.set_path("/payments")
 
   let default_failing = processors_health.default.failing
   let default_slow =
@@ -60,6 +58,8 @@ pub fn process(
 
 fn prepare_req(uri, body) {
   request.from_uri(uri)
+  |> result.map(request.set_header(_, "content-type", "application/json"))
+  |> result.map(request.set_path(_, "/payments"))
   |> result.map(request.set_method(_, http.Post))
   |> result.map(request.set_body(_, body))
 }
