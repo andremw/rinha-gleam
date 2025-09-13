@@ -92,6 +92,10 @@ pub fn main() -> Nil {
                   )
                 get_payment_summary.handle_request(req, ctx)
               }
+              ["purge-payments"] -> {
+                wisp.log_warning("PURGING PAYMENTS")
+                wisp.ok()
+              }
               _ -> wisp.not_found()
             }
           },
