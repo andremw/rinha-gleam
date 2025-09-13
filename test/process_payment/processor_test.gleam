@@ -52,6 +52,7 @@ pub fn sends_a_request_to_default_payment_processor_test() {
 
   let expected_request =
     expected_request
+    |> request.set_header("content-type", "application/json")
     |> request.set_method(http.Post)
     |> request.set_body(body)
 
