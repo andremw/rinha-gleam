@@ -2,6 +2,7 @@ import booklet.{type Booklet}
 import gleam/erlang/process.{type Subject}
 import gleam/float
 import gleam/json.{type Json}
+import gleam/list
 import gleam/otp/actor
 import rinha_gleam/process_payment/processor/types.{type PaymentProcessor}
 import rinha_gleam/shared/payment.{type Payment}
@@ -35,11 +36,7 @@ pub fn encode(summary: PaymentsSummary) -> Json {
 const actor_name = "PaymentsSummary"
 
 pub fn start() {
-  let summary =
-    booklet.new(PaymentsSummary(
-      default: Totals(total_requests: 0, total_amount: 0.0),
-      fallback: Totals(total_requests: 0, total_amount: 0.0),
-    ))
+  let summary = booklet.new([])
   let name = process.new_name(actor_name)
   let _ =
     actor.new(summary)
@@ -73,26 +70,43 @@ pub type Message {
   Get(reply_to: Subject(PaymentsSummary))
 }
 
-fn handle_message(summary_booklet: Booklet(PaymentsSummary), message: Message) {
+fn handle_message(
+  summary_booklet: Booklet(List(#(Payment, PaymentProcessor))),
+  message: Message,
+) {
   case message {
     Get(reply_to:) -> {
-      process.send(reply_to, booklet.get(summary_booklet))
+      let summary =
+        booklet.get(summary_booklet)
+        |> list.fold(
+          PaymentsSummary(
+            default: Totals(total_requests: 0, total_amount: 0.0),
+            fallback: Totals(total_requests: 0, total_amount: 0.0),
+          ),
+          with: fn(summary, payment_tuple) {
+            let #(payment, processor) = payment_tuple
+
+            case processor {
+              types.Default ->
+                PaymentsSummary(
+                  default: update_totals(summary.default, payment.amount),
+                  fallback: summary.fallback,
+                )
+              types.Fallback ->
+                PaymentsSummary(
+                  default: summary.default,
+                  fallback: update_totals(summary.fallback, payment.amount),
+                )
+            }
+          },
+        )
+
+      process.send(reply_to, summary)
       actor.continue(summary_booklet)
     }
     NewPayment(reply_to:, payment:, processor:) -> {
-      booklet.update(summary_booklet, fn(summary) {
-        case processor {
-          types.Default ->
-            PaymentsSummary(
-              ..summary,
-              default: update_totals(summary.default, payment.amount),
-            )
-          types.Fallback ->
-            PaymentsSummary(
-              ..summary,
-              fallback: update_totals(summary.fallback, payment.amount),
-            )
-        }
+      booklet.update(summary_booklet, fn(payments) {
+        list.append(payments, [#(payment, processor)])
       })
       process.send(reply_to, Nil)
       actor.continue(summary_booklet)
