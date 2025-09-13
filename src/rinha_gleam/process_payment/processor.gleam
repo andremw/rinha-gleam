@@ -32,8 +32,8 @@ pub fn process(
   let body =
     json.object([
       #("amount", json.float(payment.amount)),
-      #("correlation_id", json.string(uuid.to_string(payment.correlation_id))),
-      #("requested_at", json.string(birl.to_iso8601(payment.requested_at))),
+      #("correlationId", json.string(uuid.to_string(payment.correlation_id))),
+      #("requestedAt", json.string(birl.to_iso8601(payment.requested_at))),
     ])
     |> json.to_string
 
