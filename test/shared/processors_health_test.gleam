@@ -5,8 +5,9 @@ import gleam/string
 import gleam/uri
 import gleeunit
 import glenvy/env
+import rinha_gleam/shared/http_client.{HttpClient}
 import rinha_gleam/shared/processors_health.{
-  type Health, Health, HttpClient, MonitorArgs, ProcessorsHealth,
+  type Health, Health, MonitorArgs, ProcessorsHealth,
 }
 
 pub fn main() {

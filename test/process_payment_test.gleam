@@ -8,7 +8,8 @@ import gleeunit
 import glenvy/dotenv
 import glenvy/env
 import rinha_gleam/process_payment
-import rinha_gleam/process_payment/context.{Context, HttpClient}
+import rinha_gleam/process_payment/context.{Context}
+import rinha_gleam/shared/http_client.{HttpClient}
 import rinha_gleam/shared/payments_summary.{PaymentsSummary, Totals}
 import rinha_gleam/shared/processors_health.{Health, ProcessorsHealth}
 import wisp/testing

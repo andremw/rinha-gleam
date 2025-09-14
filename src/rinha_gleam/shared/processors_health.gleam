@@ -1,11 +1,11 @@
 import gleam/dynamic/decode
 import gleam/erlang/process.{type Subject}
-import gleam/http/request.{type Request}
-import gleam/http/response.{type Response}
+import gleam/http/request
 import gleam/json
 import gleam/otp/actor
 import gleam/result
 import gleam/uri.{type Uri}
+import rinha_gleam/shared/http_client.{type HttpClient}
 
 pub type ResponseTimeMs =
   Int
@@ -19,10 +19,6 @@ pub type ProcessorsHealth {
 }
 
 const actor_name = "ProcessorsHealth"
-
-pub type HttpClient {
-  HttpClient(send: fn(Request(String)) -> Result(Response(String), Nil))
-}
 
 pub type MonitorArgs {
   MonitorArgs(

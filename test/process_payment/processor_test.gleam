@@ -9,9 +9,10 @@ import gleam/uri
 import gleeunit
 import glenvy/dotenv
 import glenvy/env
-import rinha_gleam/process_payment/context.{Context, HttpClient}
+import rinha_gleam/process_payment/context.{Context}
 import rinha_gleam/process_payment/processor
 import rinha_gleam/process_payment/processor/types.{Default, Fallback}
+import rinha_gleam/shared/http_client.{HttpClient}
 import rinha_gleam/shared/payment.{Payment}
 import rinha_gleam/shared/processors_health.{Health, ProcessorsHealth}
 import youid/uuid
@@ -57,7 +58,7 @@ pub fn sends_a_request_to_default_payment_processor_test() {
     |> request.set_body(body)
 
   let http_client =
-    context.HttpClient(send: fn(req) {
+    HttpClient(send: fn(req) {
       assert req == expected_request
       response.new(200) |> Ok
     })

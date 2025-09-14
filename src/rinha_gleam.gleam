@@ -8,7 +8,8 @@ import gleam/uri
 import mist
 import rinha_gleam/get_payment_summary
 import rinha_gleam/process_payment
-import rinha_gleam/process_payment/context.{Context, HttpClient}
+import rinha_gleam/process_payment/context.{Context}
+import rinha_gleam/shared/http_client.{HttpClient}
 import rinha_gleam/shared/payments_summary
 import rinha_gleam/shared/processors_health
 import wisp
@@ -39,21 +40,11 @@ pub fn main() -> Nil {
           hackney.send(req) |> result.map_error(fn(_) { Nil })
         })
 
-      // TODO: unify this
-      let get_payment_summary_client =
-        get_payment_summary.HttpClient(send: fn(req) {
-          // wisp.log_info("Sending request to " <> req.host)
-          hackney.send(req) |> result.map_error(fn(_) { Nil })
-        })
-
       let summary_subject = payments_summary.start()
       let healthcheck_subject =
         processors_health.start_monitor(processors_health.MonitorArgs(
           check_interval_ms: 5000,
-          http_client: processors_health.HttpClient(send: fn(req) {
-            // wisp.log_info("Requesting service health to" <> req.host)
-            hackney.send(req) |> result.map_error(fn(_) { Nil })
-          }),
+          http_client:,
           processor_default_uri: default_uri,
           processor_fallback_uri: fallback_uri,
         ))
@@ -86,10 +77,7 @@ pub fn main() -> Nil {
               }
               ["payments-summary"] -> {
                 let ctx =
-                  get_payment_summary.Context(
-                    http_client: get_payment_summary_client,
-                    summary_subject:,
-                  )
+                  get_payment_summary.Context(http_client:, summary_subject:)
                 get_payment_summary.handle_request(req, ctx)
               }
               ["purge-payments"] -> {

@@ -1,19 +1,14 @@
 import birl
 import gleam/erlang/process.{type Subject}
 import gleam/http
-import gleam/http/request.{type Request}
-import gleam/http/response.{type Response}
 import gleam/json
 import gleam/list
 import gleam/option
 import gleam/result
 import gleam/string
+import rinha_gleam/shared/http_client.{type HttpClient}
 import rinha_gleam/shared/payments_summary
 import wisp
-
-pub type HttpClient {
-  HttpClient(send: fn(Request(String)) -> Result(Response(String), Nil))
-}
 
 pub type Context(a) {
   Context(http_client: HttpClient, summary_subject: Subject(a))

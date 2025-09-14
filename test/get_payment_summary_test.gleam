@@ -7,8 +7,9 @@ import gleam/json
 import gleam/uri
 import gleeunit
 import glenvy/dotenv
-import rinha_gleam/get_payment_summary.{Context, HttpClient}
+import rinha_gleam/get_payment_summary.{Context}
 import rinha_gleam/process_payment/processor/types.{Default, Fallback}
+import rinha_gleam/shared/http_client.{HttpClient}
 import rinha_gleam/shared/payment.{Payment}
 import rinha_gleam/shared/payments_summary.{PaymentsSummary, Totals}
 import wisp/testing
