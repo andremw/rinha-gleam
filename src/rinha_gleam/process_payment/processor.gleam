@@ -50,7 +50,7 @@ pub fn process(
     processors_health.default.min_response_time
     > processors_health.fallback.min_response_time
 
-  case default_failing || default_slow {
+  case default_failing || { default_slow && !fallback_failing } {
     False ->
       send_with_recovery(client, primary: default_req, secondary: fallback_req)
     True -> {
