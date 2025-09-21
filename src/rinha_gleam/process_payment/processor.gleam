@@ -1,4 +1,5 @@
 import birl
+import gleam/bool
 import gleam/http
 import gleam/http/request
 import gleam/http/response.{type Response}
@@ -40,6 +41,11 @@ pub fn process(
   use fallback_req <- result.try(prepare_req(fallback_uri, body))
 
   let default_failing = processors_health.default.failing
+  let fallback_failing = processors_health.fallback.failing
+  let both_failing = default_failing && fallback_failing
+
+  use <- bool.guard(when: both_failing, return: Error(Nil))
+
   let default_slow =
     processors_health.default.min_response_time
     > processors_health.fallback.min_response_time
