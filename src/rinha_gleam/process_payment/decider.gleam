@@ -1,5 +1,5 @@
 import gleam/bool
-import rinha_gleam/shared/processor.{type Processor, Default}
+import rinha_gleam/shared/processor.{type Processor, Default, Fallback}
 import rinha_gleam/shared/processors_health.{type ProcessorsHealth}
 
 pub type Decision {
@@ -13,6 +13,8 @@ pub fn decide(health: ProcessorsHealth) {
   let both_failing = default_failing && fallback_failing
 
   use <- bool.guard(when: both_failing, return: PostponePayment)
+
+  use <- bool.guard(when: default_failing, return: ProcessPaymentNow(Fallback))
 
   ProcessPaymentNow(Default)
 }

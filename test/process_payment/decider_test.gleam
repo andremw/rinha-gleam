@@ -2,7 +2,7 @@ import gleeunit
 import rinha_gleam/process_payment/decider.{
   PostponePayment, ProcessPaymentNow, decide,
 }
-import rinha_gleam/shared/processor.{Default}
+import rinha_gleam/shared/processor.{Default, Fallback}
 import rinha_gleam/shared/processors_health.{Health, ProcessorsHealth}
 
 pub fn main() {
@@ -32,6 +32,15 @@ pub fn decides_to_make_request_to_default_when_both_processors_are_available_tes
 
   assert decision == ProcessPaymentNow(Default)
 }
-// pub fn decides_to_make_request_to_fallback_when_default_processor_is_failing_test() {
-//   todo
-// }
+
+pub fn decides_to_make_request_to_fallback_when_default_processor_is_failing_test() {
+  let health =
+    ProcessorsHealth(
+      default: Health(failing: True, min_response_time: 0),
+      fallback: Health(failing: False, min_response_time: 0),
+    )
+
+  let decision = decide(health)
+
+  assert decision == ProcessPaymentNow(Fallback)
+}
