@@ -6,6 +6,7 @@ import gleam/otp/actor
 import gleam/result
 import gleam/uri.{type Uri}
 import rinha_gleam/shared/http_client.{type HttpClient}
+import rinha_gleam/shared/processor.{type Processor, Default, Fallback}
 
 pub type ResponseTimeMs =
   Int
@@ -55,11 +56,6 @@ pub fn read(subject) {
 }
 
 // actor (runs on different process)
-
-pub type Processor {
-  Default
-  Fallback
-}
 
 pub type Message {
   Shutdown
@@ -142,11 +138,13 @@ fn handle_message(state: ProcessorsHealth, message: Message) {
             ..state,
             default: Health(failing:, min_response_time:),
           )
+        // |> echo
         Fallback ->
           ProcessorsHealth(
             ..state,
             fallback: Health(failing:, min_response_time:),
           )
+        // |> echo
       }
       |> actor.continue
     }
