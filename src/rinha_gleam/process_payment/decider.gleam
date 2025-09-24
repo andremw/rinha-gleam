@@ -3,7 +3,7 @@ import rinha_gleam/shared/processor.{type Processor, Default, Fallback}
 import rinha_gleam/shared/processors_health.{type ProcessorsHealth}
 
 pub type Decision {
-  PostponePayment
+  PostponeDecision
   ProcessPaymentNow(processor: Processor)
 }
 
@@ -12,7 +12,7 @@ pub fn decide(health: ProcessorsHealth) {
   let fallback_failing = health.fallback.failing
   let both_failing = default_failing && fallback_failing
 
-  use <- bool.guard(when: both_failing, return: PostponePayment)
+  use <- bool.guard(when: both_failing, return: PostponeDecision)
 
   use <- bool.guard(when: default_failing, return: ProcessPaymentNow(Fallback))
 
