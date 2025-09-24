@@ -1,3 +1,4 @@
+import birl/duration.{Duration}
 import gleeunit
 import rinha_gleam/process_payment/decider.{
   PostponeDecision, ProcessPaymentNow, decide,
@@ -18,7 +19,7 @@ pub fn decides_to_postpone_decision_when_both_processors_are_failing_test() {
 
   let decision = decide(health)
 
-  assert decision == PostponeDecision
+  assert decision == PostponeDecision(decide_in: Duration(5000))
 }
 
 pub fn decides_to_make_request_to_default_when_both_processors_are_available_test() {
@@ -43,4 +44,16 @@ pub fn decides_to_make_request_to_fallback_when_default_processor_is_failing_tes
   let decision = decide(health)
 
   assert decision == ProcessPaymentNow(Fallback)
+}
+
+pub fn decides_to_postpone_to_the_earliest_time_possible_depending_on_the_min_response_time_of_the_processors_test() {
+  let health =
+    ProcessorsHealth(
+      default: Health(failing: True, min_response_time: 5000),
+      fallback: Health(failing: True, min_response_time: 1000),
+    )
+
+  let decision = decide(health)
+
+  assert decision == PostponeDecision(decide_in: Duration(1000))
 }
