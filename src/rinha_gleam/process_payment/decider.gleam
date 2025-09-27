@@ -1,15 +1,16 @@
 import birl/duration.{type Duration, Duration}
 import gleam/bool
 import gleam/int
+import rinha_gleam/shared/payment.{type Payment}
 import rinha_gleam/shared/processor.{type Processor, Default, Fallback}
 import rinha_gleam/shared/processors_health.{type ProcessorsHealth}
 
 pub type Decision {
   PostponeDecision(decide_in: Duration)
-  ProcessPaymentNow(processor: Processor)
+  ProcessPaymentNow(processor: Processor, payment: Payment)
 }
 
-pub fn decide(health: ProcessorsHealth) {
+pub fn decide(health: ProcessorsHealth, payment) {
   let default_failing = health.default.failing
   let fallback_failing = health.fallback.failing
   let both_failing = default_failing && fallback_failing
@@ -24,7 +25,10 @@ pub fn decide(health: ProcessorsHealth) {
     ),
   )
 
-  use <- bool.guard(when: default_failing, return: ProcessPaymentNow(Fallback))
+  use <- bool.guard(
+    when: default_failing,
+    return: ProcessPaymentNow(Fallback, payment),
+  )
 
-  ProcessPaymentNow(Default)
+  ProcessPaymentNow(Default, payment)
 }
