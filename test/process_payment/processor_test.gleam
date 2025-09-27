@@ -4,16 +4,16 @@ import gleam/http
 import gleam/http/request
 import gleam/http/response
 import gleam/json
-import gleam/string
 import gleam/uri
 import gleeunit
 import glenvy/dotenv
 import glenvy/env
 import rinha_gleam/process_payment/context.{Context}
+import rinha_gleam/process_payment/decider
 import rinha_gleam/process_payment/processor
 import rinha_gleam/shared/http_client.{HttpClient}
 import rinha_gleam/shared/payment.{Payment}
-import rinha_gleam/shared/processor_types.{Default, Fallback}
+import rinha_gleam/shared/processor_types.{Default}
 import rinha_gleam/shared/processors_health.{Health, ProcessorsHealth}
 import youid/uuid
 
@@ -77,131 +77,9 @@ pub fn sends_a_request_to_default_payment_processor_test() {
       summary_subject:,
     )
 
-  let response = processor.process(payment, ctx)
+  let decision = decider.ProcessPaymentNow(processor: Default, payment:)
 
-  assert response == Ok(response.new(200) |> response.set_body(Default))
-}
+  let response = processor.process(decision, ctx)
 
-pub fn sends_a_request_to_fallback_payment_processor_if_request_to_default_processor_fails_test() {
-  let #(payment, processor_default_uri, processor_fallback_uri) = setup()
-
-  let http_client =
-    HttpClient(send: fn(req) {
-      // here we intentionally fail the request to the default processor
-      case req.host |> string.contains("default") {
-        True -> Error(Nil)
-        False -> Ok(response.new(200))
-      }
-    })
-
-  let summary_subject = process.new_subject()
-
-  let ctx =
-    Context(
-      http_client:,
-      processor_default_uri:,
-      processor_fallback_uri:,
-      processors_health: ProcessorsHealth(
-        default: Health(failing: False, min_response_time: 5),
-        fallback: Health(failing: False, min_response_time: 5),
-      ),
-      summary_subject:,
-    )
-
-  let response = processor.process(payment, ctx)
-
-  assert response == Ok(response.new(200) |> response.set_body(Fallback))
-}
-
-pub fn sends_a_direct_request_to_fallback_payment_processor_if_default_is_failing_test() {
-  let #(payment, processor_default_uri, processor_fallback_uri) = setup()
-
-  let http_client = HttpClient(send: fn(_req) { Ok(response.new(200)) })
-
-  let summary_subject = process.new_subject()
-
-  let ctx =
-    Context(
-      http_client:,
-      processor_default_uri:,
-      processor_fallback_uri:,
-      processors_health: ProcessorsHealth(
-        default: Health(failing: True, min_response_time: 5),
-        fallback: Health(failing: False, min_response_time: 5),
-      ),
-      summary_subject:,
-    )
-
-  let response = processor.process(payment, ctx)
-
-  assert response == Ok(response.new(200) |> response.set_body(Fallback))
-}
-
-pub fn sends_a_direct_request_to_fallback_payment_processor_if_default_is_slower_test() {
-  let #(payment, processor_default_uri, processor_fallback_uri) = setup()
-
-  let http_client = HttpClient(send: fn(_req) { Ok(response.new(200)) })
-
-  let summary_subject = process.new_subject()
-
-  let ctx =
-    Context(
-      http_client:,
-      processor_default_uri:,
-      processor_fallback_uri:,
-      processors_health: ProcessorsHealth(
-        default: Health(failing: False, min_response_time: 500),
-        fallback: Health(failing: False, min_response_time: 5),
-      ),
-      summary_subject:,
-    )
-
-  let response = processor.process(payment, ctx)
-  assert response == Ok(response.new(200) |> response.set_body(Fallback))
-}
-
-pub fn sends_a_request_to_default_if_default_is_slower_but_fallback_is_failing_test() {
-  let #(payment, processor_default_uri, processor_fallback_uri) = setup()
-
-  let http_client = HttpClient(send: fn(_req) { Ok(response.new(200)) })
-
-  let summary_subject = process.new_subject()
-
-  let ctx =
-    Context(
-      http_client:,
-      processor_default_uri:,
-      processor_fallback_uri:,
-      processors_health: ProcessorsHealth(
-        default: Health(failing: False, min_response_time: 500),
-        fallback: Health(failing: True, min_response_time: 5),
-      ),
-      summary_subject:,
-    )
-
-  let response = processor.process(payment, ctx)
-  assert response == Ok(response.new(200) |> response.set_body(Default))
-}
-
-pub fn returns_error_if_both_processors_are_failing_test() {
-  let #(payment, processor_default_uri, processor_fallback_uri) = setup()
-
-  let http_client = HttpClient(send: fn(_req) { Ok(response.new(200)) })
-
-  let summary_subject = process.new_subject()
-
-  let ctx =
-    Context(
-      http_client:,
-      processor_default_uri:,
-      processor_fallback_uri:,
-      processors_health: ProcessorsHealth(
-        default: Health(failing: True, min_response_time: 500),
-        fallback: Health(failing: True, min_response_time: 5),
-      ),
-      summary_subject:,
-    )
-
-  let response = processor.process(payment, ctx)
-  assert response == Error(Nil)
+  assert response == Ok(Default)
 }

@@ -1,62 +1,50 @@
 import birl
-import gleam/bool
+import rinha_gleam/process_payment/decider.{type Decision}
+
 import gleam/http
 import gleam/http/request
-import gleam/http/response.{type Response}
 import gleam/json
 import gleam/result
 import rinha_gleam/process_payment/context.{type Context, Context}
-import rinha_gleam/shared/http_client.{type HttpClient}
-import rinha_gleam/shared/payment.{type Payment}
+
 import rinha_gleam/shared/processor_types.{
   type PaymentProcessor, Default, Fallback,
 }
 import youid/uuid
 
-/// Sends the payment request to one of the processors. By default, it tries to send a request to the default payment
-/// processor, unless it already knows that the default one is failing. In that case, or if the initial request to
-/// the default one fails, it sends the request to the fallback processor.
-/// Returns the PaymentProcessor that successfully handled the request.
 pub fn process(
-  payment: Payment,
+  decision: Decision,
   ctx: Context(a),
-) -> Result(Response(PaymentProcessor), Nil) {
+) -> Result(PaymentProcessor, Nil) {
   let Context(
     http_client: client,
     processor_default_uri: default_uri,
     processor_fallback_uri: fallback_uri,
-    processors_health:,
     ..,
+    // processors_health:,
   ) = ctx
 
-  let body =
-    json.object([
-      #("amount", json.float(payment.amount)),
-      #("correlationId", json.string(uuid.to_string(payment.correlation_id))),
-      #("requestedAt", json.string(birl.to_iso8601(payment.requested_at))),
-    ])
-    |> json.to_string
+  case decision {
+    decider.PostponeDecision(decide_in:) -> todo
+    decider.ProcessPaymentNow(processor:, payment:) -> {
+      let body =
+        json.object([
+          #("amount", json.float(payment.amount)),
+          #(
+            "correlationId",
+            json.string(uuid.to_string(payment.correlation_id)),
+          ),
+          #("requestedAt", json.string(birl.to_iso8601(payment.requested_at))),
+        ])
+        |> json.to_string
 
-  use default_req <- result.try(prepare_req(default_uri, body))
-  use fallback_req <- result.try(prepare_req(fallback_uri, body))
+      use req <- result.try(case processor {
+        Default -> prepare_req(default_uri, body)
+        Fallback -> prepare_req(fallback_uri, body)
+      })
 
-  let default_failing = processors_health.default.failing
-  let fallback_failing = processors_health.fallback.failing
-  let both_failing = default_failing && fallback_failing
-
-  use <- bool.guard(when: both_failing, return: Error(Nil))
-
-  let default_slow =
-    processors_health.default.min_response_time
-    > processors_health.fallback.min_response_time
-
-  case default_failing || { default_slow && !fallback_failing } {
-    False ->
-      send_with_recovery(client, primary: default_req, secondary: fallback_req)
-    True -> {
-      fallback_req
-      |> client.send
-      |> result.map(response.map(_, fn(_) { Fallback }))
+      client.send(req)
+      |> result.map(fn(_) { processor })
     }
   }
 }
@@ -67,15 +55,4 @@ fn prepare_req(uri, body) {
   |> result.map(request.set_path(_, "/payments"))
   |> result.map(request.set_method(_, http.Post))
   |> result.map(request.set_body(_, body))
-}
-
-fn send_with_recovery(client: HttpClient, primary req, secondary fallback) {
-  req
-  |> client.send
-  |> result.map(response.map(_, fn(_) { Default }))
-  |> result.try_recover(fn(_) {
-    fallback
-    |> client.send
-    |> result.map(response.map(_, fn(_) { Fallback }))
-  })
 }

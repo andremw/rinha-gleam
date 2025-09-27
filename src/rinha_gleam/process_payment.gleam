@@ -1,10 +1,10 @@
 import birl
 import gleam/dynamic/decode
 import gleam/http
-import gleam/http/response.{Response}
 import gleam/result
 import gleam/string_tree
 import rinha_gleam/process_payment/context.{type Context}
+import rinha_gleam/process_payment/decider
 import rinha_gleam/process_payment/processor
 import rinha_gleam/shared/payment.{Payment}
 import rinha_gleam/shared/payments_summary.{register_new_payment}
@@ -46,7 +46,9 @@ pub fn handle_request(req: Request, ctx: Context(payments_summary.Message)) {
     let payment =
       Payment(amount: body.amount, correlation_id:, requested_at: birl.now())
 
-    processor.process(payment, ctx)
+    let decision = decider.decide(ctx.processors_health, payment)
+
+    processor.process(decision, ctx)
     |> result.map_error(fn(_) { PaymentError })
     |> result.map(fn(process_result) { #(process_result, payment) })
   }
@@ -67,12 +69,9 @@ pub fn handle_request(req: Request, ctx: Context(payments_summary.Message)) {
         )),
       )
     }
-    Ok(#(Response(body: processor, status: 200, ..), payment)) -> {
+    Ok(#(processor, payment)) -> {
       register_new_payment(ctx.summary_subject, payment, processor:)
       wisp.ok()
-    }
-    _ -> {
-      wisp.bad_request()
     }
   }
 }
