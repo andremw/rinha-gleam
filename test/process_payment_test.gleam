@@ -1,6 +1,6 @@
 import birl
 import birl/duration
-import gleam/http/response
+import gleam/http/response.{Response}
 import gleam/json
 import gleam/option.{Some}
 import gleam/uri
@@ -11,7 +11,7 @@ import rinha_gleam/process_payment
 import rinha_gleam/process_payment/context.{Context}
 import rinha_gleam/shared/http_client.{HttpClient}
 import rinha_gleam/shared/payments_summary.{PaymentsSummary, Totals}
-import rinha_gleam/shared/processors_health.{Health, ProcessorsHealth}
+import rinha_gleam/shared/processors_health.{Health}
 import wisp/testing
 import youid/uuid
 
@@ -27,13 +27,27 @@ fn setup() {
   let assert Ok(default_uri) = uri.parse(default_url)
   let assert Ok(fallback_uri) = uri.parse(fallback_url)
   let summary_subject = payments_summary.start()
+  let healthcheck_subject =
+    processors_health.start_monitor(processors_health.MonitorArgs(
+      check_interval_ms: 5000,
+      http_client: HttpClient(send: fn(_) {
+        let health = Health(failing: False, min_response_time: 5)
 
-  let status = Health(failing: False, min_response_time: 5)
+        health
+        |> encode_health
+        |> json.to_string
+        |> Response(200, [], _)
+        |> Ok
+      }),
+      processor_default_uri: default_uri,
+      processor_fallback_uri: fallback_uri,
+    ))
+
   Context(
     http_client: HttpClient(send: fn(_req) { Ok(response.new(200)) }),
     processor_default_uri: default_uri,
     processor_fallback_uri: fallback_uri,
-    processors_health: ProcessorsHealth(default: status, fallback: status),
+    healthcheck_subject:,
     summary_subject:,
   )
 }
@@ -104,4 +118,11 @@ pub fn stores_payment_summary_when_successful_test() {
       default: Totals(total_requests: 1, total_amount: 19.9),
       fallback: Totals(total_requests: 0, total_amount: 0.0),
     )
+}
+
+fn encode_health(health: processors_health.Health) {
+  json.object([
+    #("failing", json.bool(health.failing)),
+    #("minResponseTime", json.int(health.min_response_time)),
+  ])
 }

@@ -13,7 +13,6 @@ import rinha_gleam/process_payment/processor
 import rinha_gleam/shared/http_client.{HttpClient}
 import rinha_gleam/shared/payment.{Payment}
 import rinha_gleam/shared/processor_types.{Default}
-import rinha_gleam/shared/processors_health.{Health, ProcessorsHealth}
 import youid/uuid
 
 pub fn main() {
@@ -63,16 +62,14 @@ pub fn sends_a_request_to_default_payment_processor_test() {
     })
 
   let summary_subject = process.new_subject()
+  let healthcheck_subject = process.new_subject()
 
   let ctx =
     Context(
       http_client:,
       processor_default_uri:,
       processor_fallback_uri:,
-      processors_health: ProcessorsHealth(
-        default: Health(failing: False, min_response_time: 5),
-        fallback: Health(failing: False, min_response_time: 5),
-      ),
+      healthcheck_subject:,
       summary_subject:,
     )
 

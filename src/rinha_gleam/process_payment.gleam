@@ -8,6 +8,7 @@ import rinha_gleam/process_payment/decider
 import rinha_gleam/process_payment/processor
 import rinha_gleam/shared/payment.{Payment}
 import rinha_gleam/shared/payments_summary.{register_new_payment}
+import rinha_gleam/shared/processors_health
 import wisp.{type Request}
 import youid/uuid
 
@@ -46,7 +47,9 @@ pub fn handle_request(req: Request, ctx: Context(payments_summary.Message)) {
     let payment =
       Payment(amount: body.amount, correlation_id:, requested_at: birl.now())
 
-    let decision = decider.decide(ctx.processors_health, payment)
+    let processors_health = processors_health.read(ctx.healthcheck_subject)
+
+    let decision = decider.decide(processors_health, payment)
 
     case decision {
       decider.PostponeDecision(decide_in:) -> todo

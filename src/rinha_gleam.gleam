@@ -60,15 +60,12 @@ pub fn main() -> Nil {
                 |> wisp.json_response(200)
               // matches /payments
               ["payments"] -> {
-                let processors_health =
-                  processors_health.read(healthcheck_subject)
-
                 // wisp.log_info("Health " <> string.inspect(processors_health))
 
                 let ctx =
                   Context(
                     http_client:,
-                    processors_health:,
+                    healthcheck_subject:,
                     processor_default_uri: default_uri,
                     processor_fallback_uri: fallback_uri,
                     summary_subject:,
