@@ -1,5 +1,5 @@
 import birl
-import rinha_gleam/process_payment/decider.{type Decision}
+import rinha_gleam/shared/payment.{type Payment}
 
 import gleam/http
 import gleam/http/request
@@ -13,7 +13,7 @@ import rinha_gleam/shared/processor_types.{
 import youid/uuid
 
 pub fn process(
-  decision: Decision,
+  payment: #(Payment, PaymentProcessor),
   ctx: Context(a),
 ) -> Result(PaymentProcessor, Nil) {
   let Context(
@@ -21,32 +21,25 @@ pub fn process(
     processor_default_uri: default_uri,
     processor_fallback_uri: fallback_uri,
     ..,
-    // processors_health:,
   ) = ctx
 
-  case decision {
-    decider.PostponeDecision(decide_in:) -> todo
-    decider.ProcessPaymentNow(processor:, payment:) -> {
-      let body =
-        json.object([
-          #("amount", json.float(payment.amount)),
-          #(
-            "correlationId",
-            json.string(uuid.to_string(payment.correlation_id)),
-          ),
-          #("requestedAt", json.string(birl.to_iso8601(payment.requested_at))),
-        ])
-        |> json.to_string
+  let #(payment, processor) = payment
 
-      use req <- result.try(case processor {
-        Default -> prepare_req(default_uri, body)
-        Fallback -> prepare_req(fallback_uri, body)
-      })
+  let body =
+    json.object([
+      #("amount", json.float(payment.amount)),
+      #("correlationId", json.string(uuid.to_string(payment.correlation_id))),
+      #("requestedAt", json.string(birl.to_iso8601(payment.requested_at))),
+    ])
+    |> json.to_string
 
-      client.send(req)
-      |> result.map(fn(_) { processor })
-    }
-  }
+  use req <- result.try(case processor {
+    Default -> prepare_req(default_uri, body)
+    Fallback -> prepare_req(fallback_uri, body)
+  })
+
+  client.send(req)
+  |> result.map(fn(_) { processor })
 }
 
 fn prepare_req(uri, body) {

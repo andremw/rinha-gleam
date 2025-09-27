@@ -48,9 +48,13 @@ pub fn handle_request(req: Request, ctx: Context(payments_summary.Message)) {
 
     let decision = decider.decide(ctx.processors_health, payment)
 
-    processor.process(decision, ctx)
-    |> result.map_error(fn(_) { PaymentError })
-    |> result.map(fn(process_result) { #(process_result, payment) })
+    case decision {
+      decider.PostponeDecision(decide_in:) -> todo
+      decider.ProcessPaymentNow(processor:, payment:) ->
+        processor.process(#(payment, processor), ctx)
+        |> result.map_error(fn(_) { PaymentError })
+        |> result.map(fn(process_result) { #(process_result, payment) })
+    }
   }
 
   case processing_result {

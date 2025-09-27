@@ -9,7 +9,6 @@ import gleeunit
 import glenvy/dotenv
 import glenvy/env
 import rinha_gleam/process_payment/context.{Context}
-import rinha_gleam/process_payment/decider
 import rinha_gleam/process_payment/processor
 import rinha_gleam/shared/http_client.{HttpClient}
 import rinha_gleam/shared/payment.{Payment}
@@ -77,9 +76,7 @@ pub fn sends_a_request_to_default_payment_processor_test() {
       summary_subject:,
     )
 
-  let decision = decider.ProcessPaymentNow(processor: Default, payment:)
-
-  let response = processor.process(decision, ctx)
+  let response = processor.process(#(payment, Default), ctx)
 
   assert response == Ok(Default)
 }
