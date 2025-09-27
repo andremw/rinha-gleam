@@ -8,6 +8,7 @@ import gleam/json.{type Json}
 import gleam/list
 import gleam/option.{type Option}
 import gleam/otp/actor
+import gleam/otp/supervision
 import gleam/result
 import rinha_gleam/shared/payment.{type Payment}
 import rinha_gleam/shared/processor_types.{
@@ -40,7 +41,7 @@ pub fn encode(summary: PaymentsSummary) -> Json {
 
 /// we'll spawn a named actor and later send messages to it using the name rather than the pid or subject.
 /// this guarantees that only one actor of this type will exist
-const actor_name = "PaymentsSummary"
+pub const actor_name = "PaymentsSummary"
 
 pub fn start() {
   let summary = booklet.new([])
@@ -52,6 +53,21 @@ pub fn start() {
     |> actor.start()
 
   process.named_subject(name)
+}
+
+pub fn supervised(name) {
+  supervision.ChildSpecification(
+    child_type: supervision.Worker(100),
+    restart: supervision.Permanent,
+    significant: False,
+    start: fn() {
+      let summary = booklet.new([])
+      actor.new(summary)
+      |> actor.on_message(handle_message)
+      |> actor.named(name)
+      |> actor.start()
+    },
+  )
 }
 
 pub fn register_new_payment(

@@ -3,6 +3,7 @@ import gleam/erlang/process.{type Subject}
 import gleam/http/request
 import gleam/json
 import gleam/otp/actor
+import gleam/otp/supervision
 import gleam/result
 import gleam/uri.{type Uri}
 import rinha_gleam/shared/http_client.{type HttpClient}
@@ -21,7 +22,7 @@ pub type ProcessorsHealth {
   ProcessorsHealth(default: Health, fallback: Health)
 }
 
-const actor_name = "ProcessorsHealth"
+pub const actor_name = "ProcessorsHealth"
 
 pub type MonitorArgs {
   MonitorArgs(
@@ -51,6 +52,33 @@ pub fn start_monitor(args: MonitorArgs) {
   process.send(monitor_process, Check(monitor_process, args))
 
   monitor_process
+}
+
+pub fn supervised(args: MonitorArgs, name) {
+  supervision.ChildSpecification(
+    child_type: supervision.Worker(100),
+    restart: supervision.Permanent,
+    significant: False,
+    start: fn() {
+      let initial_state =
+        ProcessorsHealth(
+          default: Health(failing: False, min_response_time: 10),
+          fallback: Health(failing: False, min_response_time: 10),
+        )
+
+      let started =
+        actor.new(initial_state)
+        |> actor.on_message(handle_message)
+        |> actor.named(name)
+        |> actor.start()
+
+      let monitor_process = process.named_subject(name)
+
+      process.send(monitor_process, Check(monitor_process, args))
+
+      started
+    },
+  )
 }
 
 pub fn read(subject) {

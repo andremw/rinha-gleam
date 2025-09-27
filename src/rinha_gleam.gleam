@@ -3,6 +3,7 @@ import gleam/erlang/process
 import gleam/hackney
 import gleam/int
 import gleam/json
+import gleam/otp/static_supervisor as supervisor
 import gleam/result
 import gleam/uri
 import mist
@@ -40,16 +41,16 @@ pub fn main() -> Nil {
           hackney.send(req) |> result.map_error(fn(_) { Nil })
         })
 
-      let summary_subject = payments_summary.start()
-      let healthcheck_subject =
-        processors_health.start_monitor(processors_health.MonitorArgs(
-          check_interval_ms: 5000,
-          http_client:,
-          processor_default_uri: default_uri,
-          processor_fallback_uri: fallback_uri,
-        ))
+      let summary_name = process.new_name(payments_summary.actor_name)
+      let summary_subject = process.named_subject(summary_name)
 
-      let assert Ok(_) =
+      let healthcheck_name = process.new_name(processors_health.actor_name)
+      let healthcheck_subject = process.named_subject(healthcheck_name)
+
+      // let healthcheck_subject =
+      // processors_health.start_monitor()
+
+      let webserver_supervised = fn() {
         wisp_mist.handler(
           fn(req) {
             case wisp.path_segments(req) {
@@ -89,7 +90,23 @@ pub fn main() -> Nil {
         |> mist.new
         |> mist.bind("0.0.0.0")
         |> mist.port(port)
-        |> mist.start
+        // |> mist.start
+      }
+
+      let assert Ok(_) =
+        supervisor.new(supervisor.OneForOne)
+        |> supervisor.add(payments_summary.supervised(summary_name))
+        |> supervisor.add(mist.supervised(webserver_supervised()))
+        |> supervisor.add(processors_health.supervised(
+          processors_health.MonitorArgs(
+            check_interval_ms: 5000,
+            http_client:,
+            processor_default_uri: default_uri,
+            processor_fallback_uri: fallback_uri,
+          ),
+          healthcheck_name,
+        ))
+        |> supervisor.start()
 
       process.sleep_forever()
     }
