@@ -6,11 +6,11 @@ import gleam/http/response.{type Response}
 import gleam/json
 import gleam/result
 import rinha_gleam/process_payment/context.{type Context, Context}
-import rinha_gleam/process_payment/processor/types.{
-  type PaymentProcessor, Default, Fallback,
-}
 import rinha_gleam/shared/http_client.{type HttpClient}
 import rinha_gleam/shared/payment.{type Payment}
+import rinha_gleam/shared/processor_types.{
+  type PaymentProcessor, Default, Fallback,
+}
 import youid/uuid
 
 /// Sends the payment request to one of the processors. By default, it tries to send a request to the default payment

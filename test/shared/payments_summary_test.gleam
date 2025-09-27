@@ -7,11 +7,11 @@ import gleam/option.{Some}
 import gleam/pair
 import gleeunit
 import qcheck.{type Generator}
-import rinha_gleam/process_payment/processor/types.{
-  type PaymentProcessor, Default, Fallback,
-}
 import rinha_gleam/shared/payment.{type Payment, Payment}
 import rinha_gleam/shared/payments_summary.{PaymentsSummary, Totals}
+import rinha_gleam/shared/processor_types.{
+  type PaymentProcessor, Default, Fallback,
+}
 import youid/uuid
 
 pub fn main() -> Nil {

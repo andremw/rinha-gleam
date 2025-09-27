@@ -8,10 +8,10 @@ import gleam/uri
 import gleeunit
 import glenvy/dotenv
 import rinha_gleam/get_payment_summary.{Context}
-import rinha_gleam/process_payment/processor/types.{Default, Fallback}
 import rinha_gleam/shared/http_client.{HttpClient}
 import rinha_gleam/shared/payment.{Payment}
 import rinha_gleam/shared/payments_summary.{PaymentsSummary, Totals}
+import rinha_gleam/shared/processor_types.{Default, Fallback}
 import wisp/testing
 import youid/uuid
 

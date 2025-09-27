@@ -9,8 +9,10 @@ import gleam/list
 import gleam/option.{type Option}
 import gleam/otp/actor
 import gleam/result
-import rinha_gleam/process_payment/processor/types.{type PaymentProcessor}
 import rinha_gleam/shared/payment.{type Payment}
+import rinha_gleam/shared/processor_types.{
+  type PaymentProcessor, Default, Fallback,
+}
 
 // client types (used by the processes that interact this actor)
 
@@ -100,12 +102,12 @@ fn handle_message(
             case is_within_range(payment) {
               True ->
                 case processor {
-                  types.Default ->
+                  Default ->
                     PaymentsSummary(
                       default: update_totals(summary.default, payment.amount),
                       fallback: summary.fallback,
                     )
-                  types.Fallback ->
+                  Fallback ->
                     PaymentsSummary(
                       default: summary.default,
                       fallback: update_totals(summary.fallback, payment.amount),

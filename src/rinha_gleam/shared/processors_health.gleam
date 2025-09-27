@@ -6,7 +6,9 @@ import gleam/otp/actor
 import gleam/result
 import gleam/uri.{type Uri}
 import rinha_gleam/shared/http_client.{type HttpClient}
-import rinha_gleam/shared/processor.{type Processor, Default, Fallback}
+import rinha_gleam/shared/processor_types.{
+  type PaymentProcessor as Processor, Default, Fallback,
+}
 
 pub type ResponseTimeMs =
   Int

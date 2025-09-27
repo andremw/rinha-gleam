@@ -5,7 +5,7 @@ import rinha_gleam/process_payment/decider.{
   PostponeDecision, ProcessPaymentNow, decide,
 }
 import rinha_gleam/shared/payment
-import rinha_gleam/shared/processor.{Default, Fallback}
+import rinha_gleam/shared/processor_types.{Default, Fallback}
 import rinha_gleam/shared/processors_health.{Health, ProcessorsHealth}
 import youid/uuid
 
