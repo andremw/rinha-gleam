@@ -25,10 +25,15 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: rinha-api1
+    hostname: api1
+    ports:
+      - "4369:4369" # epmd
+      - "9001:9001" # erlang distr port
     environment:
       - PORT=9999
       - PROCESSOR_DEFAULT_URL=http://payment-processor-default:8080
       - PROCESSOR_FALLBACK_URL=http://payment-processor-fallback:8080
+      - ERL_FLAGS=-name api@192.168.158.5 -setcookie rinha_cluster_cookie -kernel inet_dist_listen_min 9001 inet_dist_listen_max 9001
     networks:
       - rinha-network
       - payment-processor
